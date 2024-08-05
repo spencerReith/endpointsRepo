@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" />
+    <title>Form</title>
+</head>
+<body>
+    <h1>These are the users animals</h1>
+    <p>{{ animalsList }}</p>
+    <p>Now here is them listed out: </p>
+    {% for animal in animalsList %}
+        {{animal}}
+    {% endfor %}
+</body>
+</html>

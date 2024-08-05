@@ -1,0 +1,9 @@
+Creating an applicant object called applicantA, with arbitrary parameters.
+
+Testing 'Getter' Methods.
+userID: 12
+name: D.E. Shaw
+email: d.e.shaw.26@dartmouth.edu
+class year: 2026
+sex: m
+pref sex: f

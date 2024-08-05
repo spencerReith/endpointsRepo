@@ -1,0 +1,10 @@
+Creating a resume object called resA, with arbitrary parameters.
+
+Testing 'Getter' Methods.
+userID: 12
+major: Cognitive Science
+minor: Dutch Topology
+skills: ['Good at craftsmanship', 'strong', 'friendly']
+interests: ['history', 'social science', 'cards']
+blurb: In my previous role as a red dog architect, I designed and run haunted houses. I specialized in jump 3 whispers to create a person that was always tall. This position greatly enhanced my skills in fly cryptic myNouns.
+

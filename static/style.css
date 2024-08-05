@@ -1,0 +1,9 @@
+html {
+    font-weight: bold
+}
+
+body {
+    background-color: blue;
+    margin: 5;
+    padding: 20px;
+}
