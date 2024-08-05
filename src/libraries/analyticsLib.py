@@ -1,6 +1,7 @@
 ## library for analytics
 import os
 import sys
+import mpld3
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -10,6 +11,8 @@ sys.path.append(parent_dir)
 
 import sqlite3
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import percentileofscore
 
@@ -185,20 +188,51 @@ def getTindarIndexDF(myDB):
     conn.close()
     return df
 
-def getHistogram(myDB, userID):
+def getHistogram(userID):
+    myDB = db
     numberOfBins = 20
     df = getTindarIndexDF(myDB)
-    ## plot histogram
-    df['tindarIndex'].plot(kind='hist', bins=numberOfBins, color='lightpink', edgecolor='maroon', figsize=(10, 6), grid=False, title='Tindar Index Histogram') 
-    plt.xlabel('Tindar Index')
-    plt.ylabel('Frequency')
-    ## plot user & percentile
+    
+    # Plot histogram
+    fig, ax = plt.subplots(figsize=(10, 6))
+    df['tindarIndex'].plot(kind='hist', bins=numberOfBins, color='lightpink', edgecolor='maroon', grid=False, ax=ax)
+    ax.set_title('Tindar Index Histogram')
+    ax.set_xlabel('Tindar Index')
+    ax.set_ylabel('Frequency')
+    
+    # Plot user & percentile
     userScore = df.loc[df['userID'] == userID, 'tindarIndex'].values[0]
     userScore = round(userScore, 2)
     userPercentile = percentileofscore(df['tindarIndex'], userScore)
     userPercentile = round(userPercentile, 2)
-    plt.axvline(x=userScore, color='black', linestyle='solid', linewidth=10, label=f'TindarIndex = {userScore}')
-    plt.axvline(x=userScore+.008, color='pink', linestyle='solid', linewidth=2, label=f'TindarIndex Percentile = {userPercentile}')
+    
+    ax.axvline(x=userScore, color='black', linestyle='solid', linewidth=10, label=f'TindarIndex = {userScore}')
+    ax.axvline(x=userScore + .008, color='pink', linestyle='solid', linewidth=2, label=f'TindarIndex Percentile = {userPercentile}')
+    
+    ax.legend()
+    
+    # Save as HTML
+    # html_str = mpld3.fig_to_html(fig)
+    # with open("templates/otherProfile.html", "w") as f:
+    #     f.write(html_str)
 
-    plt.legend()
-    plt.show()
+
+
+                    # def getHistogram(userID):
+                    #     myDB = db
+                    #     numberOfBins = 20
+                    #     df = getTindarIndexDF(myDB)
+                    #     ## plot histogram
+                    #     df['tindarIndex'].plot(kind='hist', bins=numberOfBins, color='lightpink', edgecolor='maroon', figsize=(10, 6), grid=False, title='Tindar Index Histogram') 
+                    #     plt.xlabel('Tindar Index')
+                    #     plt.ylabel('Frequency')
+                    #     ## plot user & percentile
+                    #     userScore = df.loc[df['userID'] == userID, 'tindarIndex'].values[0]
+                    #     userScore = round(userScore, 2)
+                    #     userPercentile = percentileofscore(df['tindarIndex'], userScore)
+                    #     userPercentile = round(userPercentile, 2)
+                    #     plt.axvline(x=userScore, color='black', linestyle='solid', linewidth=10, label=f'TindarIndex = {userScore}')
+                    #     plt.axvline(x=userScore+.008, color='pink', linestyle='solid', linewidth=2, label=f'TindarIndex Percentile = {userPercentile}')
+
+                    #     # plt.legend()
+                    #     # plt.show()

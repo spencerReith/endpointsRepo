@@ -1,4 +1,7 @@
 import os
+import matplotlib as plt
+import io
+import base64
 import sys
 
 dirname = os.path.dirname(__file__)
@@ -73,7 +76,7 @@ def login():
         password = request.form.get("password")
         print(email, password)
 
-        return connections(49420)
+        return other_profile(49420)
     else:
         return render_template("login.html")
 
@@ -91,7 +94,11 @@ def other_profile(userID):
     endorsements = profileDict['endorsements']
     blurb = profileDict['blurb']
 
+    # analyticsLib.getHistogram(userID)
+
     return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb)
+    # return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, img_data=img_data)
+
 
 ## personal profile
 @app.route('/profile', methods=["GET", "POST"])
