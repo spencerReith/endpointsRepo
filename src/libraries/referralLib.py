@@ -16,7 +16,7 @@ import networkx as nx
 import scipy as sp
 
 
-db = '../../main.db'
+db = 'main.db'
 
 
 ########################################################
@@ -54,6 +54,8 @@ def getApplicantFromDB(myDB, userID):
     return a
 
 def sexBasedCompatabilityCheck(myDB, a_userID, b_userID):
+    print("a_userID = ", a_userID)
+    print("b_userID = ", b_userID)
     applicantA = getApplicantFromDB(myDB, a_userID)
     applicantB = getApplicantFromDB(myDB, b_userID)
     a_sex = applicantA.getSex()
@@ -94,7 +96,20 @@ def addReferralToDB(myDB, self_ID, a, b):
     conn.commit()
     conn.close()
 
-def attemptReferral(self_ID, a, b):
+def getUserID(email):
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+    query = '''
+    SELECT userID FROM applicant_pool WHERE email = ?;
+    '''
+    result = cursor.execute(query, (email,)).fetchone()
+    conn.close()
+
+    return result[0]
+
+def attemptReferral(self_ID, a_email, b_email):
+    a = getUserID(a_email)
+    b = getUserID(b_email)
     if sexBasedCompatabilityCheck(db, a, b) == False:
         return("COMPATABILITY FAILURE")
     else:

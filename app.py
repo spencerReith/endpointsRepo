@@ -10,6 +10,9 @@ import src.libraries.setterLib as setterLib
 import src.libraries.cencorshipLib as cencorshipLib
 import src.libraries.getterLib as getterLib
 import src.libraries.analyticsLib as analyticsLib
+import src.libraries.endorsementLib as endorsementLib
+import src.libraries.referralLib as referralLib
+
 
 
 from flask import Flask, render_template, request
@@ -26,7 +29,7 @@ def home():
 
 ## register
 @app.route('/register', methods=["GET", "POST"])
-def form():
+def register():
     if request.method == "POST":
         email = request.form.get("email")
         sex = request.form.get("sex")
@@ -61,4 +64,94 @@ def form():
         return render_template("register.html")
     else:
         return render_template("register.html")
+
+## register
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        print(email, password)
+
+        return connections(49420)
+    else:
+        return render_template("login.html")
+
+## other user's profile
+@app.route('/otherProfile', methods=["GET", "POST"])
+def other_profile(userID):
+    profileDict = getterLib.getProfile(userID)
+    name = profileDict['name']
+    email = profileDict['email']
+    major = profileDict['major']
+    minor = profileDict['minor']
+    skills = profileDict['skills']
+    interests = profileDict['interests']
+    tindarIndex = round(profileDict['tindarIndex'], 4)
+    endorsements = profileDict['endorsements']
+    blurb = profileDict['blurb']
+
+    return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb)
+
+## personal profile
+@app.route('/profile', methods=["GET", "POST"])
+def profile(userID):
+    if request.method == "POST":
+        emailEND = request.form.get("emailEND")
+        message = request.form.get("message")
+        emailA = request.form.get("emailA")
+        emailB = request.form.get("emailB")
+        
+        if emailEND != None and message != None:
+            print("making endorsement")
+            endorsementLib.attemptEndorsement(userID, emailEND, message)
+            
+        if emailA != None and emailB != None:
+            if len(emailA) > 0 and len(emailB) > 0:    
+                print("making referral")
+                referralLib.attemptReferral(userID, emailA, emailB)
+        
+        
+    profileDict = getterLib.getProfile(userID)
+    name = profileDict['name']
+    print("name is right here: ", name)
+    email = profileDict['email']
+    major = profileDict['major']
+    minor = profileDict['minor']
+    skills = profileDict['skills']
+    interests = profileDict['interests']
+    tindarIndex = round(profileDict['tindarIndex'], 4)
+    endorsements = profileDict['endorsements']
+    blurb = profileDict['blurb']
+
+    endRefs = getterLib.getEndRefs(userID)
+    endorsementsRemaining = endRefs['remainingEndorsements']
+    referralsRemaining = endRefs['remainingReferrals']
+
+    return render_template("profile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, endorsementsRemaining=endorsementsRemaining, referralsRemaining=referralsRemaining)
+
+
+
+## recruiting
+@app.route('/recruiting', methods=["GET", "POST"])
+def recruiting(userID):
+    if request.method == "POST":
+        choice = request.form.get("choice")
+    
+    deck = getterLib.getDeck(userID)
+    return render_template("recruiting.html", deck=deck)
+
+
+## recruiting
+@app.route('/leaderboard', methods=["GET"])
+def leaderboard():    
+    leaderboardDict = getterLib.getLeaderboard()
+    return render_template("leaderboard.html", leaderboardDict=leaderboardDict)
+
+## connections
+@app.route('/connections', methods=["GET"])
+def connections(userID):    
+    connectionsDict = getterLib.getConnections(userID)
+    return render_template("connections.html", connectionsDict=connectionsDict)
+
 

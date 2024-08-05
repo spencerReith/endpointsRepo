@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" />
+    <title>User's profile</title>
+</head>
+<body>
+    <h1>'This is my own profile'</h1>
+    <p> {{ name }} {{ major }} {{ minor }} {{ email }} {{ skills }} {{ interests }} {{ tindarIndex }} {{ endorsements }} {{ blurb }}</p>
+
+    <h2>Other information thats needed</h2>
+    <p> {{ endorsementsRemaining }} {{ referralsRemaining}}</p>
+
+    <h3> How to endsorse an applicant </h3>
+    <form method="post">
+        <div class="form__fieldset">
+            <label>email to endorse</label>
+            <input type="test" name="emailEND" class="form_input" />
+
+            <label>message</label>
+            <input type="test" name="message" class="form_input" />
+
+        </div>
+        <input class="form_submit" type="submit" />
+    </form>
+    <h4> How to refer two applicants </h4>
+    <form method="post">
+        <div class="form__fieldset">
+            <label>first email to endorse</label>
+            <input type="test" name="emailA" class="form_input" />
+
+            <label>second email to endorse</label>
+            <input type="test" name="emailB" class="form_input" />
+
+        </div>
+        <input class="form_submit" type="submit" />
+    </form>
+    </body>
+</html>

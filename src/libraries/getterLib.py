@@ -21,7 +21,7 @@ import pandas as pd
 
 
 
-db = '../../main.db'
+db = 'main.db'
 cap = 10
 
 def getDeck(userID):
@@ -43,13 +43,13 @@ def getProfile(userID):
         'name': applicant_df['name'][0],
         'email': applicant_df['email'][0],
         'classYear' : 2026,
-        'major' : res_df['major'][0],
-        'minor' : res_df['minor'][0],
-        'skills' : res_df['skills'][0],
-        'interests' : res_df['interests'][0],
-        'tindarIndex' : stats_df['tindarIndex'][0],
+        'major' : res_df['major'],
+        'minor' : res_df['minor'],
+        'skills' : res_df['skills'],
+        'interests' : res_df['interests'],
+        'tindarIndex' : stats_df['tindarIndex'],
         'endorsements' : endorsementLib.fetchEndorsements(userID),
-        'blurb' : res_df['blurb'][0]
+        'blurb' : res_df['blurb']
     }
     return profile
 
@@ -169,7 +169,6 @@ def getConnections(userID):
 ##getEndorsements
 
 def overCharLimit(type, message):
-    print(message)
     mLength = 0
     for word in message:
         for c in word:

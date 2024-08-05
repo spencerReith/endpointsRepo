@@ -16,7 +16,7 @@ from libraries import cencorshipLib
 from libraries import getterLib
 
 
-db = '../../main.db'
+db = 'main.db'
 
 
 def createEndorsementsTable(myDB):

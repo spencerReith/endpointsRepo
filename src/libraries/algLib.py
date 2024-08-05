@@ -20,7 +20,7 @@ from libraries import cencorshipLib
 ### FUNCTIONS FOR DATABASE QUERERING & GRAPH CONSTRUCTION + VISUALIZATION
 ########################################################
 
-db = '../../main.db'
+db = 'main.db'
 
 def getNodesFromDB(myDB):
     conn = sqlite3.connect(myDB)
