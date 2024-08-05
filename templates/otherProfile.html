@@ -6,5 +6,6 @@
 <body>
     <h1>This is their profile</h1>
     <p> {{ name }} {{ major }} {{ minor }} {{ email }} {{ skills }} {{ interests }} {{ tindarIndex }} {{ endorsements }} {{ blurb }}</p>
+    {{ html_str | safe }}
 </body>
 </html>

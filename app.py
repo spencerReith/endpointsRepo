@@ -76,7 +76,7 @@ def login():
         password = request.form.get("password")
         print(email, password)
 
-        return other_profile(49420)
+        return recruiting(49400)
     else:
         return render_template("login.html")
 
@@ -94,9 +94,9 @@ def other_profile(userID):
     endorsements = profileDict['endorsements']
     blurb = profileDict['blurb']
 
-    # analyticsLib.getHistogram(userID)
+    html_str = analyticsLib.getHistogram(userID)
 
-    return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb)
+    return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, html_str=html_str)
     # return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, img_data=img_data)
 
 
@@ -110,6 +110,8 @@ def profile(userID):
         emailB = request.form.get("emailB")
         
         if emailEND != None and message != None:
+            if cencorshipLib.contains_prof(message):
+                return "message contains profanity, this is not allowed"
             print("making endorsement")
             endorsementLib.attemptEndorsement(userID, emailEND, message)
             
