@@ -24,21 +24,16 @@ def createMessagesTable():
 def parseMessage(messageString):
     if messageString == None:
         return None
-    print("message string:", messageString)
     splitArray = messageString.strip('}').split('}')
-    print("/n/nsplit array", splitArray)
     print(len(splitArray))
     mTupleList = []
     for i in range(0, len(splitArray), 2):
-        print("elements:", splitArray[i], splitArray[i+1])
         messageTuple = (splitArray[i], splitArray[i+1])
         mTupleList.append(messageTuple)
     return mTupleList
 
 def retrieveRawMessageString(user1_ID, user2_ID):
     ## ensure lower userID will be marked as 'a_userID' in DB
-    print("user1_ID", user1_ID)
-    print("user2_ID,", user2_ID)
     if user1_ID < user2_ID:
         userA_ID = user1_ID
         userB_ID = user2_ID
@@ -101,18 +96,13 @@ def sendMessage(fromEmail, toEmail, message):
     ## Remove problematic characters from message ##
     message_list = list(message)
     for i in range(len(message_list)):
-        if message_list[i] == '}' or message_list[i] == '\'' or message_list[i] == '<' or message_list[i] == '>' or message_list[i] == '$' or message_list[i] == '*' or message_list[i] == ';' or message_list[i] == '=' or message_list[i] == '-':
-            print("caught")
+        if message_list[i] == '}' or message_list[i] == '\'' or message_list[i] == '/' or message_list[i] == '<' or message_list[i] == '>' or message_list[i] == '$' or message_list[i] == '*' or message_list[i] == ';' or message_list[i] == '=' or message_list[i] == '-':
             message_list[i] = '_'
     message = ''.join(message_list)
             
-
-    print("ici")
-    print("after cencorship, message: ", message)
     fromUserID = authenticationLib.pullUserID(fromEmail)
     toUserID = authenticationLib.pullUserID(toEmail)
     ## create properly formatted message string
     concatString = str(fromUserID) + "}" + message + "}"
-    print("\n\nconcat string:\n\n", concatString)
     concatonateMessage(fromUserID, toUserID, concatString)
     return concatString

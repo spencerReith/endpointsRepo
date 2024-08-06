@@ -39,18 +39,31 @@ def getProfile(userID):
     res_df = getResumeDF(userID)
     applicant_df = getApplicantDF(userID)
     stats_df = getStatisticsDF(userID)
+
+    name = applicant_df['name'][0]
+    email = applicant_df['email'][0]
+    classYear = 2026
+    major = res_df['major'].to_list()
+    minor = res_df['minor'].to_list()
+    skills = res_df['skills'].to_list()
+    interests = res_df['interests'].to_list()
+    tindarIndex = stats_df['tindarIndex'].to_list()
+    endorsements = endorsementLib.fetchEndorsements(userID)
+    blurb = res_df['blurb'].to_list()
+
     profile = {
-        'name': applicant_df['name'][0],
-        'email': applicant_df['email'][0],
-        'classYear' : 2026,
-        'major' : res_df['major'],
-        'minor' : res_df['minor'],
-        'skills' : res_df['skills'],
-        'interests' : res_df['interests'],
-        'tindarIndex' : stats_df['tindarIndex'],
-        'endorsements' : endorsementLib.fetchEndorsements(userID),
-        'blurb' : res_df['blurb']
-    }
+        'name': name,
+        'email': email,
+        'classYear' : classYear,
+        'major' : major,
+        'minor' : minor,
+        'skills' : skills,
+        'interests' : interests,
+        'tindarIndex' : tindarIndex,
+        'endorsements' : endorsements,
+        'blurb' : blurb
+        }
+
     return profile
 
 

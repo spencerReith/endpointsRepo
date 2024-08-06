@@ -89,7 +89,9 @@ def login():
                 userID = int(authenticationLib.pullUserID(email))
                 session["userID"] = userID
                 session["email"] = email
-                return redirect('/messaging')
+                newDeck = getterLib.getDeck(userID)
+                session["deck"] = newDeck
+                return redirect('/recruiting')
             else:
                 return "incorrect password"
         except:
@@ -119,7 +121,8 @@ def other_profile(userID):
 
 ## personal profile
 @app.route('/profile', methods=["GET", "POST"])
-def profile(userID):
+def profile():
+    userID = session["userID"]
     if request.method == "POST":
         print("method is post")
         emailEND = request.form.get("emailEND")
@@ -165,12 +168,13 @@ def profile(userID):
 
 ## recruiting
 @app.route('/recruiting', methods=["GET", "POST"])
-def recruiting(userID):
+def recruiting():
+    userID = session["userID"]
+    
     if request.method == "POST":
         choice = request.form.get("choice")
-    
-    deck = getterLib.getDeck(userID)
-    return render_template("recruiting.html", deck=deck)
+    print("here's the deck", session["deck"])
+    return render_template("recruiting.html", deck=session["deck"])
 
 
 ## recruiting
@@ -188,7 +192,7 @@ def connections(userID):
 @app.route('/messaging', methods=["GET", "POST"])
 def messaging():
     self_userID = session["userID"]
-    email = "bone.26@dartmouth.edu"
+    email = "a.26@dartmouth.edu"
     if request.method == "POST":
         provided_message = request.form.get("message")
         messagingLib.sendMessage(session["email"], email, provided_message)
