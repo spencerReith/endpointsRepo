@@ -91,6 +91,22 @@ def is_banned(email):
 additionalBadWords = [
     'head',
     'sexy',
+    'sex',
     'banging',
     'sloppy',
+    '}',
+    '{',
+    '-',
+    '=',
+    '\'',
+    '\\',
+    '/',
+    '"',
+    '@',
+    '$',
+    '&',
+    '%',
+    '*',
+    'SELECT',
+    'DELETE'
 ]

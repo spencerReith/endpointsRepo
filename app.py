@@ -47,10 +47,18 @@ def createResume():
         skills = [request.form.get("skill1"), request.form.get("skill2"), request.form.get("skill3")]
         interests = [request.form.get("interest1"), request.form.get("interest2"), request.form.get("interest3")]
         blurbEntries = [request.form.get("noun1"), request.form.get("noun2"), request.form.get("noun3"), request.form.get("verb1"), request.form.get("verb2"), request.form.get("verb3"), request.form.get("adj1"), request.form.get("adj2"), request.form.get("adj3")]
-        gpa = float(request.form.get("gpa"))
-        ricePurity = float(request.form.get("ricePurity"))
-        tindarIndex = analyticsLib.calcTindarIndex(gpa, ricePurity)
-
+        try:
+            gpa = float(request.form.get("gpa"))
+            ricePurity = float(request.form.get("ricePurity"))
+            tindarIndex = analyticsLib.calcTindarIndex(gpa, ricePurity)
+        except:
+            return "you need to fill in values in all fields"
+        
+        ## ensure all fields are filled out
+        for key in request.form:
+            value = request.form.get(key)
+            if not value:
+                return "you need to fill in all fields"
         
         if cencorshipLib.is_banned(email):
             return "this user is banned they should not be trying to log in"
@@ -181,7 +189,14 @@ def recruiting():
 @app.route('/leaderboard', methods=["GET"])
 def leaderboard():    
     leaderboardDict = getterLib.getLeaderboard()
-    return render_template("leaderboard.html", leaderboardDict=leaderboardDict)
+    profilesDict = {}
+    i = 1
+    for leaderID in leaderboardDict:
+        leader = getterLib.getProfile(leaderID)
+        profilesDict[i] = leader
+        i+=1
+
+    return render_template("leaderboard.html", profilesDict=profilesDict)
 
 ## connections
 @app.route('/connections', methods=["GET"])
