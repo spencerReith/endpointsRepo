@@ -15,13 +15,16 @@ import src.libraries.getterLib as getterLib
 import src.libraries.analyticsLib as analyticsLib
 import src.libraries.endorsementLib as endorsementLib
 import src.libraries.referralLib as referralLib
+import src.libraries.authenticationLib as authenticationLib
+import src.libraries.messagingLib as messagingLib
 
 
+from flask import Flask, render_template, request, redirect, session
 
-from flask import Flask, render_template, request
+
 
 app = Flask(__name__)
-
+app.secret_key = "inspector"
 
 
 ## home
@@ -30,11 +33,13 @@ def home():
     return "sample home page, will lead to login or register"
 
 
-## register
+
+## create resume
 @app.route('/register', methods=["GET", "POST"])
-def register():
+def createResume():
     if request.method == "POST":
         email = request.form.get("email")
+        password = request.form.get("password")
         sex = request.form.get("sex")
         prefSex = request.form.get("prefSex")
         major = request.form.get("major")
@@ -59,10 +64,14 @@ def register():
             return "no profanity is allowed in interests"
         if cencorshipLib.contains_prof(blurbEntries):
             return "no profanity is allowed in your resume entries"
+        if authenticationLib.emailInDB(email):
+            return "this email is already in use."
         
         userID = setterLib.createUser(email, 2026, sex, prefSex)
+        authenticationLib.insert_passcode(userID, email, password)
         setterLib.createProfile(userID, major, minor, skills, interests, blurbEntries)
         analyticsLib.addTindarIndexToDB(userID, tindarIndex)
+
 
         return render_template("register.html")
     else:
@@ -75,8 +84,16 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
         print(email, password)
-
-        return recruiting(49400)
+        try:
+            if authenticationLib.passwordIsAccurate(email, password) == True:
+                userID = int(authenticationLib.pullUserID(email))
+                session["userID"] = userID
+                session["email"] = email
+                return redirect('/messaging')
+            else:
+                return "incorrect password"
+        except:
+            return "critical system failure"
     else:
         return render_template("login.html")
 
@@ -104,6 +121,7 @@ def other_profile(userID):
 @app.route('/profile', methods=["GET", "POST"])
 def profile(userID):
     if request.method == "POST":
+        print("method is post")
         emailEND = request.form.get("emailEND")
         message = request.form.get("message")
         emailA = request.form.get("emailA")
@@ -114,9 +132,13 @@ def profile(userID):
                 return "message contains profanity, this is not allowed"
             print("making endorsement")
             endorsementLib.attemptEndorsement(userID, emailEND, message)
-            
+        print("success")
+        print("email a", emailA)
+        print("email b", emailB)
         if emailA != None and emailB != None:
+            print("attempting ref")
             if len(emailA) > 0 and len(emailB) > 0:    
+                print('succes through here')
                 print("making referral")
                 referralLib.attemptReferral(userID, emailA, emailB)
         
@@ -163,4 +185,13 @@ def connections(userID):
     connectionsDict = getterLib.getConnections(userID)
     return render_template("connections.html", connectionsDict=connectionsDict)
 
+@app.route('/messaging', methods=["GET", "POST"])
+def messaging():
+    self_userID = session["userID"]
+    email = "bone.26@dartmouth.edu"
+    if request.method == "POST":
+        provided_message = request.form.get("message")
+        messagingLib.sendMessage(session["email"], email, provided_message)
 
+    mTupleList = messagingLib.retrieveMessages(self_userID, email)
+    return render_template("messaging.html", email=email, mTupleList=mTupleList)

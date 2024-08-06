@@ -1,0 +1,1 @@
+-- To use for manual SQL entries --

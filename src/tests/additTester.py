@@ -10,18 +10,19 @@ sys.path.append(parent_dir)
 
 
 import sqlite3
-import libraries.setterLib as setterLib
-import libraries.getterLib as getterLib
-import libraries.algLib as algLib
-import libraries.analyticsLib as analyticsLib
-import libraries.referralLib as referralLib
-import libraries.endorsementLib as endorsementLib
-import libraries.cencorshipLib as cencorshipLib
-import libraries.resumeLib as resumeLib
+import src.libraries.setterLib as setterLib
+import src.libraries.getterLib as getterLib
+import src.libraries.algLib as algLib
+import src.libraries.analyticsLib as analyticsLib
+import src.libraries.referralLib as referralLib
+import src.libraries.endorsementLib as endorsementLib
+import src.libraries.cencorshipLib as cencorshipLib
+import src.libraries.resumeLib as resumeLib
+import src.libraries.authenticationLib as authenticationLib
 from random import randint
 
 ## empty existing tables
-myDB = '../../main.db'
+myDB = 'main.db'
 
 conn = sqlite3.connect(myDB)
 cursor = conn.cursor()
@@ -40,6 +41,7 @@ analyticsLib.createStatisticsTable(myDB)
 referralLib.createReferralsTable(myDB)
 endorsementLib.createEndorsementsTable(myDB)
 resumeLib.createResumeTable(myDB)
+authenticationLib.createAuthorizationTable(myDB)
 
 ####################################################
 #### Load Database #################################

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" />
+    <title>User's profile</title>
+</head>
+<body>
+    <h1>Messsaging page</h1>
+    <!-- <p> {{ name }} {{ major }} {{ minor }} {{ email }} {{ skills }} {{ interests }} {{ tindarIndex }} {{ endorsements }} {{ blurb }}</p> -->
+
+
+    <h2> Current messages with person {{ email }}</h1>
+    <p> {{ mTupleList }}</p>
+
+    <h3> Send a message: </h3>
+    <form action="/messaging" method="POST">
+        <div class="form__fieldset">
+            <label>message</label>
+            <input type="test" name="message" class="form_input" />
+        </div>
+        <input class="form_submit" type="submit" />
+    </form>
+    </body>
+</html>
