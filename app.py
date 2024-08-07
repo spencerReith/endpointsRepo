@@ -103,7 +103,7 @@ def login():
             else:
                 return "incorrect password"
         except:
-            return "critical system failure"
+            return "email not found"
     else:
         return render_template("login.html")
 
