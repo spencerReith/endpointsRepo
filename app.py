@@ -99,7 +99,7 @@ def login():
                 session["email"] = email
                 newDeck = getterLib.getDeck(userID)
                 session["deck"] = newDeck
-                return redirect('/recruiting')
+                return redirect('/profile')
             else:
                 return "incorrect password"
         except:
