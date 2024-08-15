@@ -19,13 +19,15 @@ import src.libraries.authenticationLib as authenticationLib
 import src.libraries.messagingLib as messagingLib
 
 
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, jsonify
+from flask_cors import CORS
+
 
 
 
 app = Flask(__name__)
 app.secret_key = "inspector"
-
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API endpoints
 
 ## home
 @app.route('/', methods=["GET"])
@@ -85,31 +87,36 @@ def createResume():
     else:
         return render_template("register.html")
 
-## register
-@app.route('/login', methods=["GET", "POST"])
+@app.route('/api/login', methods=["POST"])
 def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        print(email, password)
+        print("email and password:", email, password)
         try:
-            if authenticationLib.passwordIsAccurate(email, password) == True:
+            if authenticationLib.passwordIsAccurate(email, password):
                 userID = int(authenticationLib.pullUserID(email))
-                session["userID"] = userID
-                session["email"] = email
+                session['userID'] = userID
+                session['email'] = email
                 newDeck = getterLib.getDeck(userID)
-                session["deck"] = newDeck
-                return redirect('/profile')
+                session['deck'] = newDeck
+                # Return a JSON response with the redirect URL
+                print("made it to end\n\n\n")
+                return jsonify({"redirect": "/api/recruiting"})
             else:
-                return "incorrect password"
-        except:
-            return "email not found"
+                return jsonify({"error": "Incorrect password"}), 401
+        except Exception as e:
+            print(e)
+            return jsonify({"error": "Email not found"}), 404
     else:
         return render_template("login.html")
 
 ## other user's profile
 @app.route('/otherProfile', methods=["GET", "POST"])
 def other_profile(userID):
+
     profileDict = getterLib.getProfile(userID)
     name = profileDict['name']
     email = profileDict['email']
@@ -128,8 +135,12 @@ def other_profile(userID):
 
 
 ## personal profile
-@app.route('/profile', methods=["GET", "POST"])
+@app.route('/api/profile', methods=["GET", "POST"])
 def profile():
+    print("inside of profile")
+    # print("Session data:", session)
+    # print("inside of profile\n\n")
+    # print("\n\nhere is sessions:\n", session['userID'])
     userID = session["userID"]
     if request.method == "POST":
         print("method is post")
@@ -162,7 +173,7 @@ def profile():
     minor = profileDict['minor']
     skills = profileDict['skills']
     interests = profileDict['interests']
-    tindarIndex = round(profileDict['tindarIndex'], 4)
+    tindarIndex = profileDict['tindarIndex']
     endorsements = profileDict['endorsements']
     blurb = profileDict['blurb']
 
@@ -170,13 +181,29 @@ def profile():
     endorsementsRemaining = endRefs['remainingEndorsements']
     referralsRemaining = endRefs['remainingReferrals']
 
-    return render_template("profile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, endorsementsRemaining=endorsementsRemaining, referralsRemaining=referralsRemaining)
+    return jsonify({
+            "user": {
+                "name": profileDict['name'],
+                "email": profileDict['email'],
+                "major": profileDict['major'],
+                "minor": profileDict['minor'],
+                "skills": profileDict['skills'],
+                "interests": profileDict['interests'],
+                "tindarIndex": profileDict['tindarIndex'],
+                "endorsements": profileDict['endorsements'],
+                "blurb": profileDict['blurb'],
+                "endorsementsRemaining": endRefs['remainingEndorsements'],
+                "referralsRemaining": endRefs['remainingReferrals']
+            }
+        })
+    # return render_template("profile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, endorsementsRemaining=endorsementsRemaining, referralsRemaining=referralsRemaining)
 
 
 
 ## recruiting
-@app.route('/recruiting', methods=["GET", "POST"])
+@app.route('/api/recruiting', methods=["GET", "POST"])
 def recruiting():
+    print("we were redirected here")
     userID = session["userID"]
     
     if request.method == "POST":
@@ -214,3 +241,6 @@ def messaging():
 
     mTupleList = messagingLib.retrieveMessages(self_userID, email)
     return render_template("messaging.html", email=email, mTupleList=mTupleList)
+
+if __name__ == '__main__':
+    app.run()
