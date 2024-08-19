@@ -37,45 +37,71 @@ def home():
 
 
 ## create resume
-@app.route('/register', methods=["GET", "POST"])
+@app.route('/api/register', methods=["GET", "POST"])
 def createResume():
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        sex = request.form.get("sex")
-        prefSex = request.form.get("prefSex")
-        major = request.form.get("major")
-        minor = request.form.get("minor")
-        skills = [request.form.get("skill1"), request.form.get("skill2"), request.form.get("skill3")]
-        interests = [request.form.get("interest1"), request.form.get("interest2"), request.form.get("interest3")]
-        blurbEntries = [request.form.get("noun1"), request.form.get("noun2"), request.form.get("noun3"), request.form.get("verb1"), request.form.get("verb2"), request.form.get("verb3"), request.form.get("adj1"), request.form.get("adj2"), request.form.get("adj3")]
+        data = request.get_json()
+        print("\n\nhere is the data: ", data)
+        email = data.get('email')
+        password = data.get('password')
+        sex = data.get('sex')
+        prefSex = data.get('prefSex')
+        major = data.get('major')
+        minor = data.get('minor')
+        skill1 = data.get('skill1')
+        skill2 = data.get('skill2')
+        skill3 = data.get('skill3')
+        skills = [skill1, skill2, skill3]
+        interest1 = data.get('interest1')
+        interest2 = data.get('interest2')
+        interest3 = data.get('interest3')
+        interests = [interest1, interest2, interest3]
+        noun1 = data.get('noun1')
+        noun2 = data.get('noun2')
+        noun3 = data.get('noun3')
+        adj1 = data.get('adj1')
+        adj2 = data.get('adj2')
+        adj3 = data.get('adj3')
+        verb1 = data.get('verb1')
+        verb2 = data.get('verb2')
+        verb3 = data.get('verb3')
+        blurbEntries = [noun1, noun2, noun3, adj1, adj2, adj3, verb1, verb2, verb3]
+        rawGPA = data.get('gpa')
+        print("rawGPA:", rawGPA)
+        rawRP = data.get('ricePurity')
+        print("rawRP:", rawRP)
+        gpa = float(rawGPA)
+        print(gpa)
+        ricePurity = float(rawRP)
+        print(ricePurity)
         try:
-            gpa = float(request.form.get("gpa"))
-            ricePurity = float(request.form.get("ricePurity"))
+            print("4")
             tindarIndex = analyticsLib.calcTindarIndex(gpa, ricePurity)
+            print("calc'd tindar index as : ", tindarIndex)
         except:
-            return "you need to fill in values in all fields"
+            print("error here")
+            return jsonify({'error': 'Registration error'}), 400
         
         ## ensure all fields are filled out
-        for key in request.form:
-            value = request.form.get(key)
-            if not value:
-                return "you need to fill in all fields"
+        # for key in request.form:
+        #     value = request.form.get(key)
+        #     if not value:
+        #         return jsonify({'error': 'Registration error'}), 400
         
         if cencorshipLib.is_banned(email):
-            return "this user is banned they should not be trying to log in"
+            return jsonify({'error': 'Registration error'}), 400
         if getterLib.overCharLimit('skills', skills):
-            return "over char limit for skills"
+            return jsonify({'error': 'Registration error'}), 400
         if getterLib.overCharLimit('interests', interests):
-            return "over char limit for interests"
+            return jsonify({'error': 'Registration error'}), 400
         if cencorshipLib.contains_prof(skills):
-            return "no profanity is allowed in skills"
+            return jsonify({'error': 'Registration error'}), 400
         if cencorshipLib.contains_prof(interests):
-            return "no profanity is allowed in interests"
+            return jsonify({'error': 'Registration error'}), 400
         if cencorshipLib.contains_prof(blurbEntries):
-            return "no profanity is allowed in your resume entries"
+            return jsonify({'error': 'Registration error'}), 400
         if authenticationLib.emailInDB(email):
-            return "this email is already in use."
+            return jsonify({'error': 'Registration error'}), 400
         
         userID = setterLib.createUser(email, 2026, sex, prefSex)
         authenticationLib.insert_passcode(userID, email, password)
@@ -83,9 +109,11 @@ def createResume():
         analyticsLib.addTindarIndexToDB(userID, tindarIndex)
 
 
-        return render_template("register.html")
+        return jsonify({'message': 'Registration successful'})
+        # return render_template("register.html")
     else:
-        return render_template("register.html")
+        return jsonify({'error': 'Registration error'}), 400
+        # return render_template("register.html")
 
 @app.route('/api/login', methods=["POST"])
 def login():
@@ -104,7 +132,7 @@ def login():
                 session['deck'] = newDeck
                 # Return a JSON response with the redirect URL
                 print("made it to end\n\n\n")
-                return jsonify({"redirect": "/api/recruiting"})
+                return jsonify({"redirect": "/recruiting"})
             else:
                 return jsonify({"error": "Incorrect password"}), 401
         except Exception as e:
