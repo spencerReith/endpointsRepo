@@ -19,15 +19,17 @@ import src.libraries.authenticationLib as authenticationLib
 import src.libraries.messagingLib as messagingLib
 
 
-from flask import Flask, render_template, request, redirect, session, jsonify
+from flask import Flask, render_template, request, session, redirect, jsonify
+# from flask_session import Session
 from flask_cors import CORS
 
 
-
-
 app = Flask(__name__)
-app.secret_key = "inspector"
-CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API endpoints
+app.secret_key = 'inspector'
+
+
+CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API endpoints
+
 
 ## home
 @app.route('/', methods=["GET"])
@@ -38,6 +40,7 @@ def home():
 
 ## create resume
 @app.route('/api/register', methods=["GET", "POST"])
+# @cross_origin(supports_credentials=True)
 def createResume():
     if request.method == "POST":
         data = request.get_json()
@@ -116,6 +119,7 @@ def createResume():
         # return render_template("register.html")
 
 @app.route('/api/login', methods=["POST"])
+# @cross_origin(supports_credentials=True)
 def login():
     data = request.get_json()
     email = data.get('email')
@@ -127,9 +131,11 @@ def login():
             if authenticationLib.passwordIsAccurate(email, password):
                 userID = int(authenticationLib.pullUserID(email))
                 session['userID'] = userID
+                session['arbitrary'] = userID
                 session['email'] = email
                 newDeck = getterLib.getDeck(userID)
                 session['deck'] = newDeck
+                print("session in login:", session)
                 # Return a JSON response with the redirect URL
                 print("made it to end\n\n\n")
                 return jsonify({"redirect": "/recruiting"})
@@ -169,7 +175,7 @@ def profile():
     # print("Session data:", session)
     # print("inside of profile\n\n")
     # print("\n\nhere is sessions:\n", session['userID'])
-    userID = session["userID"]
+    userID = session['userID']
     if request.method == "POST":
         print("method is post")
         emailEND = request.form.get("emailEND")
@@ -229,10 +235,12 @@ def profile():
 
 
 ## recruiting
-@app.route('/api/recruiting', methods=["GET", "POST"])
+@app.route('/api/recruiting', methods=["GET"])
+# @cross_origin(supports_credentials=True)
 def recruiting():
     print("we were redirected here")
-    userID = session["userID"]
+    print("session: ", session)
+    userID = session['userID']
     
     if request.method == "POST":
         choice = request.form.get("choice")
