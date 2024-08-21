@@ -49,7 +49,6 @@ def home():
 def createResume():
     if request.method == "POST":
         data = request.get_json()
-        print("\n\nhere is the data: ", data)
         email = data.get('email')
         password = data.get('password')
         sex = data.get('sex')
@@ -75,27 +74,15 @@ def createResume():
         verb3 = data.get('verb3')
         blurbEntries = [noun1, noun2, noun3, adj1, adj2, adj3, verb1, verb2, verb3]
         rawGPA = data.get('gpa')
-        print("rawGPA:", rawGPA)
         rawRP = data.get('ricePurity')
-        print("rawRP:", rawRP)
-        gpa = float(rawGPA)
-        print(gpa)
-        ricePurity = float(rawRP)
-        print(ricePurity)
         try:
-            print("4")
+            gpa = float(rawGPA)
+            ricePurity = float(rawRP)
             tindarIndex = analyticsLib.calcTindarIndex(gpa, ricePurity)
-            print("calc'd tindar index as : ", tindarIndex)
         except:
-            print("error here")
+            print("we got error1 so we are here.")
             return jsonify({'error': 'Registration error'}), 400
-        
-        ## ensure all fields are filled out
-        # for key in request.form:
-        #     value = request.form.get(key)
-        #     if not value:
-        #         return jsonify({'error': 'Registration error'}), 400
-        
+       
         if cencorshipLib.is_banned(email):
             return jsonify({'error': 'Registration error'}), 400
         if getterLib.overCharLimit('skills', skills):
@@ -115,7 +102,11 @@ def createResume():
         authenticationLib.insert_passcode(userID, email, password)
         setterLib.createProfile(userID, major, minor, skills, interests, blurbEntries)
         analyticsLib.addTindarIndexToDB(userID, tindarIndex)
-
+        
+        session['userID'] = userID
+        session['email'] = email
+        newDeck = getterLib.getDeck(userID)
+        session['deck'] = newDeck
 
         return jsonify({'message': 'Registration successful'})
         # return render_template("register.html")
@@ -131,25 +122,21 @@ def login():
     password = data.get('password')
     
     if request.method == "POST":
-        print("email and password:", email, password)
         try:
             if authenticationLib.passwordIsAccurate(email, password):
                 userID = int(authenticationLib.pullUserID(email))
                 session['userID'] = userID
-                session['arbitrary'] = userID
                 session['email'] = email
                 newDeck = getterLib.getDeck(userID)
                 session['deck'] = newDeck
-                print("session in login:", session)
                 # Serialize the session data to a JSON string
                 session_data = json.dumps(dict(session))
     
                 # Calculate the size of the session data in bytes
                 session_size = len(session_data.encode('utf-8'))
                 
-                print(session_size)
+                print("session_size:", session_size)
                 # Return a JSON response with the redirect URL
-                print("made it to end\n\n\n")
                  # This should show all the session variables
                 return jsonify({"redirect": "/recruiting"})
             else:
@@ -178,56 +165,18 @@ def other_profile(userID):
     html_str = analyticsLib.getHistogram(userID)
 
     return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, html_str=html_str)
-    # return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, img_data=img_data)
 
 
 ## personal profile
-@app.route('/api/profile', methods=["GET", "POST"])
+@app.route('/api/userProfile', methods=["GET"])
 def profile():
     print("inside of profile")
-    # print("Session data:", session)
-    # print("inside of profile\n\n")
-    # print("\n\nhere is sessions:\n", session['userID'])
-    userID = session['userID']
-    if request.method == "POST":
-        print("method is post")
-        emailEND = request.form.get("emailEND")
-        message = request.form.get("message")
-        emailA = request.form.get("emailA")
-        emailB = request.form.get("emailB")
-        
-        if emailEND != None and message != None:
-            if cencorshipLib.contains_prof(message):
-                return "message contains profanity, this is not allowed"
-            print("making endorsement")
-            endorsementLib.attemptEndorsement(userID, emailEND, message)
-        print("success")
-        print("email a", emailA)
-        print("email b", emailB)
-        if emailA != None and emailB != None:
-            print("attempting ref")
-            if len(emailA) > 0 and len(emailB) > 0:    
-                print('succes through here')
-                print("making referral")
-                referralLib.attemptReferral(userID, emailA, emailB)
-        
-        
+    userID = session['userID']            
     profileDict = getterLib.getProfile(userID)
-    name = profileDict['name']
-    print("name is right here: ", name)
-    email = profileDict['email']
-    major = profileDict['major']
-    minor = profileDict['minor']
-    skills = profileDict['skills']
-    interests = profileDict['interests']
-    tindarIndex = profileDict['tindarIndex']
-    endorsements = profileDict['endorsements']
-    blurb = profileDict['blurb']
-
     endRefs = getterLib.getEndRefs(userID)
-    endorsementsRemaining = endRefs['remainingEndorsements']
-    referralsRemaining = endRefs['remainingReferrals']
-
+    print("\n\nRetrieved Profile:\n")
+    print(profileDict)
+   
     return jsonify({
             "user": {
                 "name": profileDict['name'],
@@ -243,31 +192,25 @@ def profile():
                 "referralsRemaining": endRefs['remainingReferrals']
             }
         })
-    # return render_template("profile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, endorsementsRemaining=endorsementsRemaining, referralsRemaining=referralsRemaining)
 
 
 
 ## recruiting
 @app.route('/api/recruiting', methods=["GET"])
-# @cross_origin(supports_credentials=True)
 def recruiting():
     
-    print("we were redirected here")
-    print("session: ", session)
-    
+    print("\n\nRedirected to Recruiting.\n\n")
+    print("\n\nession: \n", session)    
     # Log all the cookies sent with the request
-    print("Cookies sent with the request:", request.cookies)
+    print("\nCookies sent with the request:\n", request.cookies)
     
-    if session:
+    if session['userID']:
         userID = session['userID']
-        
-        if request.method == "POST":
-            choice = request.form.get("choice")
-        print("here's the deck", session["deck"])
-        return render_template("recruiting.html", deck=session["deck"])
+        print("\n\n\nhere's the deck", session["deck"])
+        return jsonify(session['deck'])
+        # return render_template("recruiting.html", deck=session["deck"])
     else:
-        return render_template("recruiting.html")
-
+        return jsonify({"error": "User not logged in"}), 402
 
 ## recruiting
 @app.route('/leaderboard', methods=["GET"])
@@ -284,13 +227,14 @@ def leaderboard():
 
 ## connections
 @app.route('/connections', methods=["GET"])
-def connections(userID):    
+def connections():    
+    userID = session['userID']
     connectionsDict = getterLib.getConnections(userID)
     return render_template("connections.html", connectionsDict=connectionsDict)
 
 @app.route('/messaging', methods=["GET", "POST"])
 def messaging():
-    self_userID = session["userID"]
+    self_userID = session['userID']
     email = "a.26@dartmouth.edu"
     if request.method == "POST":
         provided_message = request.form.get("message")
@@ -301,3 +245,49 @@ def messaging():
 
 if __name__ == '__main__':
     app.run()
+
+
+
+
+
+
+
+
+                # ## personal profile
+                # @app.route('/api/userProfile', methods=["GET", "POST"])
+                # def profile():
+                #     userID = session['userID']
+                #     if request.method == "POST":
+                #         emailEND = request.form.get("emailEND")
+                #         message = request.form.get("message")
+                #         emailA = request.form.get("emailA")
+                #         emailB = request.form.get("emailB")
+                        
+                #         if emailEND != None and message != None:
+                #             if cencorshipLib.contains_prof(message):
+                #                 return "message contains profanity, this is not allowed"
+                #             print("making endorsement")
+                #             endorsementLib.attemptEndorsement(userID, emailEND, message)
+
+                #         if emailA != None and emailB != None:
+                #             if len(emailA) > 0 and len(emailB) > 0:    
+                #                 referralLib.attemptReferral(userID, emailA, emailB)
+                                
+                #     profileDict = getterLib.getProfile(userID)
+                #     endRefs = getterLib.getEndRefs(userID)
+
+                #     return jsonify({
+                #             "user": {
+                #                 "name": profileDict['name'],
+                #                 "email": profileDict['email'],
+                #                 "major": profileDict['major'],
+                #                 "minor": profileDict['minor'],
+                #                 "skills": profileDict['skills'],
+                #                 "interests": profileDict['interests'],
+                #                 "tindarIndex": profileDict['tindarIndex'],
+                #                 "endorsements": profileDict['endorsements'],
+                #                 "blurb": profileDict['blurb'],
+                #                 "endorsementsRemaining": endRefs['remainingEndorsements'],
+                #                 "referralsRemaining": endRefs['remainingReferrals']
+                #             }
+                #         })
