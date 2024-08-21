@@ -10,3 +10,6 @@ or
 
 To enter the virtual environment
 `source venv/bin/activate`
+
+Install the requirements in the current environment
+`pip install -r requirements.txt`
