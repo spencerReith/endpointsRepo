@@ -3,6 +3,8 @@ import matplotlib as plt
 import io
 import base64
 import sys
+import json
+
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -26,7 +28,10 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = 'inspector'
-
+app.config.update(
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=True,
+)
 
 CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API endpoints
 
@@ -136,8 +141,16 @@ def login():
                 newDeck = getterLib.getDeck(userID)
                 session['deck'] = newDeck
                 print("session in login:", session)
+                # Serialize the session data to a JSON string
+                session_data = json.dumps(dict(session))
+    
+                # Calculate the size of the session data in bytes
+                session_size = len(session_data.encode('utf-8'))
+                
+                print(session_size)
                 # Return a JSON response with the redirect URL
                 print("made it to end\n\n\n")
+                 # This should show all the session variables
                 return jsonify({"redirect": "/recruiting"})
             else:
                 return jsonify({"error": "Incorrect password"}), 401
@@ -238,14 +251,22 @@ def profile():
 @app.route('/api/recruiting', methods=["GET"])
 # @cross_origin(supports_credentials=True)
 def recruiting():
+    
     print("we were redirected here")
     print("session: ", session)
-    userID = session['userID']
     
-    if request.method == "POST":
-        choice = request.form.get("choice")
-    print("here's the deck", session["deck"])
-    return render_template("recruiting.html", deck=session["deck"])
+    # Log all the cookies sent with the request
+    print("Cookies sent with the request:", request.cookies)
+    
+    if session:
+        userID = session['userID']
+        
+        if request.method == "POST":
+            choice = request.form.get("choice")
+        print("here's the deck", session["deck"])
+        return render_template("recruiting.html", deck=session["deck"])
+    else:
+        return render_template("recruiting.html")
 
 
 ## recruiting
