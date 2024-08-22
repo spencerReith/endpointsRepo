@@ -139,6 +139,7 @@ def getConnections(userID):
     ## filter by swiping connections, and refferals
     swiping_df = df[(df['weight'] == 1)]
     referrals_df = df[(df['weight'] == 14)]
+    print("refs df: ", referrals_df)
 
     ## convert swiping connections and referrals to dictionaries
     raw_swiping_interactions = swiping_df.to_dict(orient='list')
@@ -165,6 +166,7 @@ def getConnections(userID):
     
     
     referrals = referralLib.getReferralInfo(db, userID)
+    print("referals", referrals)
 
     
                     # ## if a_userID is not one's self, it's the person he or she was referred to

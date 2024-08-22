@@ -219,8 +219,8 @@ def recruiting():
         return jsonify({"error": "User not logged in"}), 402
 
 ## recruiting
-@app.route('/leaderboard', methods=["GET"])
-def leaderboard():    
+@app.route('/api/leaderboard', methods=["GET"])
+def leaderboard():
     leaderboardDict = getterLib.getLeaderboard()
     profilesDict = {}
     i = 1
@@ -229,14 +229,30 @@ def leaderboard():
         profilesDict[i] = leader
         i+=1
 
-    return render_template("leaderboard.html", profilesDict=profilesDict)
+    return jsonify(profilesDict)
 
 ## connections
-@app.route('/connections', methods=["GET"])
+@app.route('/api/connections', methods=["GET"])
 def connections():    
     userID = session['userID']
     connectionsDict = getterLib.getConnections(userID)
-    return render_template("connections.html", connectionsDict=connectionsDict)
+    print(connectionsDict)
+    print("\n\nConnections Dict: ", connectionsDict)
+
+    swipeMatchProfiles = {}
+    refMatchProfiles = {}
+    for swipeUserID in connectionsDict['swipingMatches']:
+        swipeMatchProfiles[swipeUserID] = getterLib.getProfile(swipeUserID)
+    for refUserID in connectionsDict['referrals']:
+        refMatchProfiles[refUserID] = getterLib.getProfile(refUserID)
+    ## return full profiles of connections
+    connectionProfiles = {
+        'selfID':userID,
+        'swipeMatches':swipeMatchProfiles,
+        'refMatches':refMatchProfiles
+        }
+    
+    return jsonify(connectionProfiles)
 
 @app.route('/messaging', methods=["GET", "POST"])
 def messaging():
