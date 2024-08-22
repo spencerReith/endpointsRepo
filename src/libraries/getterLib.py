@@ -36,9 +36,11 @@ def getDeck(userID):
     return deck
 
 def getProfile(userID):
+    print("\n\nUserID:", userID)
     res_df = getResumeDF(userID)
     applicant_df = getApplicantDF(userID)
     stats_df = getStatisticsDF(userID)
+    print("\n\ApplicantDF:\n", applicant_df)
 
     name = applicant_df['name'][0]
     email = applicant_df['email'][0]

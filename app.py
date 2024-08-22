@@ -148,24 +148,30 @@ def login():
         return render_template("login.html")
 
 ## other user's profile
-@app.route('/otherProfile', methods=["GET", "POST"])
-def other_profile(userID):
-
+@app.route('/api/otherProfile', methods=["GET"])
+def other_profile():
+    userID = request.args.get('userID')
+    print("UserID as stated:", userID)
     profileDict = getterLib.getProfile(userID)
-    name = profileDict['name']
-    email = profileDict['email']
-    major = profileDict['major']
-    minor = profileDict['minor']
-    skills = profileDict['skills']
-    interests = profileDict['interests']
-    tindarIndex = round(profileDict['tindarIndex'], 4)
-    endorsements = profileDict['endorsements']
-    blurb = profileDict['blurb']
+    endRefs = getterLib.getEndRefs(userID)
+    # html_str = analyticsLib.getHistogram(userID)
 
-    html_str = analyticsLib.getHistogram(userID)
-
-    return render_template("otherProfile.html", name=name, email=email, major=major, minor=minor, skills=skills, interests=interests, tindarIndex=tindarIndex, endorsements=endorsements, blurb=blurb, html_str=html_str)
-
+    return jsonify({
+            "user": {
+                "name": profileDict['name'],
+                "email": profileDict['email'],
+                "major": profileDict['major'],
+                "minor": profileDict['minor'],
+                "skills": profileDict['skills'],
+                "interests": profileDict['interests'],
+                "tindarIndex": profileDict['tindarIndex'],
+                "endorsements": profileDict['endorsements'],
+                "blurb": profileDict['blurb'],
+                "endorsementsRemaining": endRefs['remainingEndorsements'],
+                "referralsRemaining": endRefs['remainingReferrals'],
+                # "html_str": html_str
+            }
+        })
 
 ## personal profile
 @app.route('/api/userProfile', methods=["GET"])
