@@ -51,7 +51,6 @@ def getProfile(userID):
     interests = res_df['interests'].to_list()
     tindarIndex = stats_df['tindarIndex'].to_list()
     endorsements = endorsementLib.fetchEndorsements(userID)
-    blurb = res_df['blurb'].to_list()
 
     profile = {
         'name': name,
@@ -63,7 +62,6 @@ def getProfile(userID):
         'interests' : interests,
         'tindarIndex' : tindarIndex,
         'endorsements' : endorsements,
-        'blurb' : blurb
         }
 
     return profile

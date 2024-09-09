@@ -1,4 +1,4 @@
-Set Up: 
+Set Up:
 
  (if you don't already have virtualenv installed)
 `pip install virtualenv`

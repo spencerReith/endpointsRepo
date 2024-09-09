@@ -22,7 +22,6 @@ def createResumeTable(myDB):
         minor TEXT,
         skills TEXT,
         interests TEXT,
-        blurb TEXT,
         referrals_remaining INT,
         endorsements_remaining INT,
         swipes_remaining INT,
@@ -37,11 +36,10 @@ def addResumeToDB(myDB, res):
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
-    INSERT INTO resume_table (userID, major, minor, skills, interests, blurb, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    INSERT INTO resume_table (userID, major, minor, skills, interests, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     '''
-    # print(res.getUserID(), res.getMajor(), res.getMinor(), res.getSkillsString(), res.getInterestsString(), res.getBlurb(), res.getReferrals_Remaining(), res.getEndorsements_Remaining())
-    cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getSkillsString(), res.getInterestsString(), res.getBlurb(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update()))
+    cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getSkillsString(), res.getInterestsString(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update()))
     conn.commit()
     conn.close()
 
@@ -54,6 +52,11 @@ def parseName(email):
         fullName = fullName + name + ' '
     fullName = fullName[:-1]
     return fullName
+
+def parseClassYear(email):
+    startOfEmail = email.strip("@dartmouth.edu")
+    year = startOfEmail[:-2]
+    return year
 
 def fetchLatestSwipesUpdate(myDB, userID):
     conn = sqlite3.connect(myDB)
@@ -98,7 +101,6 @@ def fetchSwipesRemaining(myDB, userID):
     conn.close()
     return swipesRemaining
 
-# def incrementSwipesRemaining(userID):
                              
 def checkForSwipesUpdate(myDB, userID):
     currentDate = date.today()

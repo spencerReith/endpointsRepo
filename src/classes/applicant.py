@@ -14,7 +14,7 @@ class Applicant:
         self.userID = userID
         self.name = resumeLib.parseName(email)
         self.email = email
-        self.classYear = classYear
+        self.classYear = resumeLib.parseClassYear(email)
         self.sex = sex
         self.prefSex = prefSex
     

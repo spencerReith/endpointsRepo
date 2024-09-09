@@ -19,45 +19,18 @@ from datetime import date
 
 class Resume:
     wordInputCap = 10
-    def __init__(self, userID, major, minor, skills, interests, blurbEntries):
+    def __init__(self, userID, major, minor, skills, interests):
         self.userID = userID
         self.major = major
         self.minor = minor
         self.skills = skills
         self.interests = interests
-        self.blurb = self.createBlurb(blurbEntries)
 
         self.referrals_remaining = 3
         self.endorsements_remaining = 5
         self.swipes_remaining = 40
         self.last_login = date.today()
-        
-    def createBlurb(self, wordEntries):
-        amntOfBlurbs = 3
-        blurbsPath = 'textFiles/blurbs.txt'
 
-        randomNumber = random.randint(0, amntOfBlurbs - 1)
-
-        blurbsFile = open(blurbsPath)
-        blurbText = ""
-        i = 0
-        for line in blurbsFile:
-            if i == randomNumber:
-                blurbText = line
-                break
-            i += 1
-        nouns = wordEntries[0:3]
-        verbs = wordEntries[3:6]
-        adjectives =  wordEntries[6:10]
-
-        for i in range(len(nouns)):
-            blurbText = blurbText.replace("myNoun", nouns[i], 1)
-        for i in range(len(verbs)):
-            blurbText = blurbText.replace("myVerb", verbs[i], 1)
-        for i in range(len(adjectives)):
-            blurbText = blurbText.replace("myAdjective", adjectives[i], 1)
-        
-        return blurbText
     
     def getUserID(self):
         return self.userID
@@ -81,9 +54,6 @@ class Resume:
             interestsString = interestsString + interest + ','
         interestsString = str(interestsString[:-1])
         return interestsString
-    
-    def getBlurb(self):
-        return self.blurb
     
     def getReferrals_Remaining(self):
         return self.referrals_remaining

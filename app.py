@@ -19,6 +19,7 @@ import src.libraries.endorsementLib as endorsementLib
 import src.libraries.referralLib as referralLib
 import src.libraries.authenticationLib as authenticationLib
 import src.libraries.messagingLib as messagingLib
+import src.libraries.snsLib as snsLib
 
 
 from flask import Flask, render_template, request, session, redirect, jsonify
@@ -41,11 +42,29 @@ CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})  #
 def home():
     return "sample home page, will lead to login or register"
 
+@app.route('/api/verifyEmail-1', methods=['POST'])
+def verifyEmail1():
+    data = request.get_json()
+    email = data.get('email')
+    session['emailKey'] = snsLib.send_verification_email(email)
+    return jsonify({"redirect": "/verifyEmail2"})
+
+
+@app.route('/api/verifyEmail-2', methods=['POST'])
+def verifyEmail2():
+    print("inside of verifyEmail2")
+    data = request.get_json()
+    given_key = data.get('emailKey')
+    print("User gave key:", given_key)
+    print("Actual key: ", session['emailKey'])
+    if given_key != session['emailKey']:
+        return jsonify({'error': 'Key Incorrect'}), 400
+    else:
+        return jsonify({'res': 'Valid Login'}), 200
 
 
 ## create resume
 @app.route('/api/register', methods=["GET", "POST"])
-# @cross_origin(supports_credentials=True)
 def createResume():
     if request.method == "POST":
         data = request.get_json()
@@ -63,16 +82,6 @@ def createResume():
         interest2 = data.get('interest2')
         interest3 = data.get('interest3')
         interests = [interest1, interest2, interest3]
-        noun1 = data.get('noun1')
-        noun2 = data.get('noun2')
-        noun3 = data.get('noun3')
-        adj1 = data.get('adj1')
-        adj2 = data.get('adj2')
-        adj3 = data.get('adj3')
-        verb1 = data.get('verb1')
-        verb2 = data.get('verb2')
-        verb3 = data.get('verb3')
-        blurbEntries = [noun1, noun2, noun3, adj1, adj2, adj3, verb1, verb2, verb3]
         rawGPA = data.get('gpa')
         rawRP = data.get('ricePurity')
         try:
@@ -80,27 +89,24 @@ def createResume():
             ricePurity = float(rawRP)
             tindarIndex = analyticsLib.calcTindarIndex(gpa, ricePurity)
         except:
-            print("we got error1 so we are here.")
             return jsonify({'error': 'Registration error'}), 400
        
         if cencorshipLib.is_banned(email):
-            return jsonify({'error': 'Registration error'}), 400
+            return jsonify({'error': 'Registration error: User is Banned'}), 400
         if getterLib.overCharLimit('skills', skills):
-            return jsonify({'error': 'Registration error'}), 400
+            return jsonify({'error': 'Registration error: Skills over Char Limit'}), 400
         if getterLib.overCharLimit('interests', interests):
-            return jsonify({'error': 'Registration error'}), 400
+            return jsonify({'error': 'Registration error: Interests over Char Limit'}), 400
         if cencorshipLib.contains_prof(skills):
-            return jsonify({'error': 'Registration error'}), 400
+            return jsonify({'error': 'Registration error: Profanity in Skills'}), 400
         if cencorshipLib.contains_prof(interests):
-            return jsonify({'error': 'Registration error'}), 400
-        if cencorshipLib.contains_prof(blurbEntries):
-            return jsonify({'error': 'Registration error'}), 400
+            return jsonify({'error': 'Registration error: Profanity in Interests'}), 400
         if authenticationLib.emailInDB(email):
-            return jsonify({'error': 'Registration error'}), 400
+            return jsonify({'error': 'Registration error: Email Already Registered'}), 400
         
         userID = setterLib.createUser(email, 2026, sex, prefSex)
         authenticationLib.insert_passcode(userID, email, password)
-        setterLib.createProfile(userID, major, minor, skills, interests, blurbEntries)
+        setterLib.createProfile(userID, major, minor, skills, interests)
         analyticsLib.addTindarIndexToDB(userID, tindarIndex)
         
         session['userID'] = userID
@@ -109,13 +115,10 @@ def createResume():
         session['deck'] = newDeck
 
         return jsonify({'message': 'Registration successful'})
-        # return render_template("register.html")
     else:
         return jsonify({'error': 'Registration error'}), 400
-        # return render_template("register.html")
 
 @app.route('/api/login', methods=["POST"])
-# @cross_origin(supports_credentials=True)
 def login():
     data = request.get_json()
     email = data.get('email')
@@ -154,7 +157,6 @@ def other_profile():
     print("UserID as stated:", userID)
     profileDict = getterLib.getProfile(userID)
     endRefs = getterLib.getEndRefs(userID)
-    # html_str = analyticsLib.getHistogram(userID)
 
     return jsonify({
             "user": {
@@ -166,10 +168,8 @@ def other_profile():
                 "interests": profileDict['interests'],
                 "tindarIndex": profileDict['tindarIndex'],
                 "endorsements": profileDict['endorsements'],
-                "blurb": profileDict['blurb'],
                 "endorsementsRemaining": endRefs['remainingEndorsements'],
                 "referralsRemaining": endRefs['remainingReferrals'],
-                # "html_str": html_str
             }
         })
 
@@ -193,7 +193,6 @@ def profile():
                 "interests": profileDict['interests'],
                 "tindarIndex": profileDict['tindarIndex'],
                 "endorsements": profileDict['endorsements'],
-                "blurb": profileDict['blurb'],
                 "endorsementsRemaining": endRefs['remainingEndorsements'],
                 "referralsRemaining": endRefs['remainingReferrals']
             }
@@ -267,49 +266,3 @@ def messaging():
 
 if __name__ == '__main__':
     app.run()
-
-
-
-
-
-
-
-
-                # ## personal profile
-                # @app.route('/api/userProfile', methods=["GET", "POST"])
-                # def profile():
-                #     userID = session['userID']
-                #     if request.method == "POST":
-                #         emailEND = request.form.get("emailEND")
-                #         message = request.form.get("message")
-                #         emailA = request.form.get("emailA")
-                #         emailB = request.form.get("emailB")
-                        
-                #         if emailEND != None and message != None:
-                #             if cencorshipLib.contains_prof(message):
-                #                 return "message contains profanity, this is not allowed"
-                #             print("making endorsement")
-                #             endorsementLib.attemptEndorsement(userID, emailEND, message)
-
-                #         if emailA != None and emailB != None:
-                #             if len(emailA) > 0 and len(emailB) > 0:    
-                #                 referralLib.attemptReferral(userID, emailA, emailB)
-                                
-                #     profileDict = getterLib.getProfile(userID)
-                #     endRefs = getterLib.getEndRefs(userID)
-
-                #     return jsonify({
-                #             "user": {
-                #                 "name": profileDict['name'],
-                #                 "email": profileDict['email'],
-                #                 "major": profileDict['major'],
-                #                 "minor": profileDict['minor'],
-                #                 "skills": profileDict['skills'],
-                #                 "interests": profileDict['interests'],
-                #                 "tindarIndex": profileDict['tindarIndex'],
-                #                 "endorsements": profileDict['endorsements'],
-                #                 "blurb": profileDict['blurb'],
-                #                 "endorsementsRemaining": endRefs['remainingEndorsements'],
-                #                 "referralsRemaining": endRefs['remainingReferrals']
-                #             }
-                #         })
