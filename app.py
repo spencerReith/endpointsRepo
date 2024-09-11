@@ -20,6 +20,7 @@ import src.libraries.referralLib as referralLib
 import src.libraries.authenticationLib as authenticationLib
 import src.libraries.messagingLib as messagingLib
 import src.libraries.snsLib as snsLib
+import src.libraries.algLib as algLib
 
 
 from flask import Flask, render_template, request, session, redirect, jsonify
@@ -204,17 +205,22 @@ def profile():
 def recruiting():
     if request.method == 'POST':
         data = request.get_json()
+        print(data)
+        direction = data.get('choice')
+        if direction == 'right':
+            choice_code = 1
+        else:
+            choice_code = 0
+        
         otherUserID = data.get('userID')
-        print(otherUserID)
-        print("\ndeck before:\n", session['deck'])
         oldDeck = session['deck']
         del oldDeck[otherUserID]
         session['deck'] = oldDeck
-        print("\ndeck after:\n", session['deck'])
 
+        userID = session['userID']
+        algLib.addInteractionToDB(userID, otherUserID, choice_code)
 
     if session['userID']:
-        userID = session['userID']
         return jsonify(session['deck'])
     else:
         return jsonify({"error": "User not logged in"}), 402
