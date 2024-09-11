@@ -52,7 +52,6 @@ def verifyEmail1():
 
 @app.route('/api/verifyEmail-2', methods=['POST'])
 def verifyEmail2():
-    print("inside of verifyEmail2")
     data = request.get_json()
     given_key = data.get('emailKey')
     print("User gave key:", given_key)
@@ -201,19 +200,22 @@ def profile():
 
 
 ## recruiting
-@app.route('/api/recruiting', methods=["GET"])
+@app.route('/api/recruiting', methods=['GET', 'POST'])
 def recruiting():
-    
-    print("\n\nRedirected to Recruiting.\n\n")
-    print("\n\nession: \n", session)    
-    # Log all the cookies sent with the request
-    print("\nCookies sent with the request:\n", request.cookies)
-    
+    if request.method == 'POST':
+        data = request.get_json()
+        otherUserID = data.get('userID')
+        print(otherUserID)
+        print("\ndeck before:\n", session['deck'])
+        oldDeck = session['deck']
+        del oldDeck[otherUserID]
+        session['deck'] = oldDeck
+        print("\ndeck after:\n", session['deck'])
+
+
     if session['userID']:
         userID = session['userID']
-        print("\n\n\nhere's the deck", session["deck"])
         return jsonify(session['deck'])
-        # return render_template("recruiting.html", deck=session["deck"])
     else:
         return jsonify({"error": "User not logged in"}), 402
 
