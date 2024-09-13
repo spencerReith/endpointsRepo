@@ -4,6 +4,7 @@ import io
 import base64
 import sys
 import json
+from datetime import date
 
 
 dirname = os.path.dirname(__file__)
@@ -21,6 +22,7 @@ import src.libraries.authenticationLib as authenticationLib
 import src.libraries.messagingLib as messagingLib
 import src.libraries.snsLib as snsLib
 import src.libraries.algLib as algLib
+import src.libraries.resumeLib as resumeLib
 
 
 from flask import Flask, render_template, request, session, redirect, jsonify
@@ -111,7 +113,7 @@ def createResume():
         
         session['userID'] = userID
         session['email'] = email
-        newDeck = getterLib.getDeck(userID)
+        newDeck = getterLib.getDeck(userID, 40)
         session['deck'] = newDeck
 
         return jsonify({'message': 'Registration successful'})
@@ -123,32 +125,48 @@ def login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-    
-    if request.method == "POST":
-        try:
-            if authenticationLib.passwordIsAccurate(email, password):
-                userID = int(authenticationLib.pullUserID(email))
-                session['userID'] = userID
-                session['email'] = email
-                newDeck = getterLib.getDeck(userID)
+    try:
+        if authenticationLib.passwordIsAccurate(email, password):
+            userID = int(authenticationLib.pullUserID(email))
+            session['userID'] = userID
+            session['email'] = email
+            print("1. heres the session:\n", session)
+            #############
+            ## Get deck only if one hasn't been pulled that day
+            #############
+            latest_update = resumeLib.fetchLatestSwipesUpdate(userID)
+            date_today = date.today()
+
+            if latest_update != date_today:
+                resumeLib.resetSwipes(userID, date_today)
+                newDeck = getterLib.getDeck(userID, 40)
                 session['deck'] = newDeck
-                # Serialize the session data to a JSON string
-                session_data = json.dumps(dict(session))
-    
-                # Calculate the size of the session data in bytes
-                session_size = len(session_data.encode('utf-8'))
-                
-                print("session_size:", session_size)
-                # Return a JSON response with the redirect URL
-                 # This should show all the session variables
-                return jsonify({"redirect": "/recruiting"})
+            elif resumeLib.fetchSwipesRemaining(userID) <= 0:
+                session['deck'] = []
             else:
-                return jsonify({"error": "Incorrect password"}), 401
-        except Exception as e:
-            print(e)
-            return jsonify({"error": "Email not found"}), 404
-    else:
-        return render_template("login.html")
+                remSwipes = resumeLib.fetchSwipesRemaining()
+                newDeck = getterLib.getDeck(userID, remSwipes)
+                session['deck'] = newDeck
+
+            print("2. heres the session:\n", session)
+            #############
+            #############
+
+            # Serialize the session data to a JSON string
+            session_data = json.dumps(dict(session))
+    
+            # Calculate the size of the session data in bytes
+            session_size = len(session_data.encode('utf-8'))
+                
+            print("\n3. session_size:", session_size)
+            # Return a JSON response with the redirect URL
+            # This should show all the session variables
+            return jsonify({"redirect": "/recruiting"})
+        else:
+            return jsonify({"error": "Incorrect password"}), 401
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "Email not found"}), 404
 
 ## other user's profile
 @app.route('/api/otherProfile', methods=["GET"])
@@ -176,6 +194,7 @@ def other_profile():
 ## personal profile
 @app.route('/api/userProfile', methods=["GET"])
 def profile():
+    print("\n\n\nHere is session:", session)
     print("inside of profile")
     userID = session['userID']            
     profileDict = getterLib.getProfile(userID)
@@ -205,7 +224,6 @@ def profile():
 def recruiting():
     if request.method == 'POST':
         data = request.get_json()
-        print(data)
         direction = data.get('choice')
         if direction == 'right':
             choice_code = 1
@@ -219,6 +237,7 @@ def recruiting():
 
         userID = session['userID']
         algLib.addInteractionToDB(userID, otherUserID, choice_code)
+        resumeLib.decrementSwipes(userID)
 
     if session['userID']:
         return jsonify(session['deck'])
@@ -274,3 +293,46 @@ def messaging():
 
 if __name__ == '__main__':
     app.run()
+
+@app.route('/api/endorse', methods=['POST'])
+def endorse():
+    data = request.get_json()
+    to_email = data.get("email")
+    msg = data.get("msg")
+    a_email = session["email"]
+    a_userID = endorsementLib.getUserIDFromEmail(a_email)
+    ## if the user is out of swipes, don't let the endorsement go through
+    endsRemaining = resumeLib.fetchEndorsementsRemaining(endorsementLib.getUserIDFromEmail(to_email))
+    if endsRemaining <= 0:
+            return jsonify({'error': 'No more endorsements remaining.'}), 400
+    else:
+        try:
+            if endorsementLib.attemptEndorsement(a_userID, to_email, msg) == True:
+                return jsonify({'result': 'sucess'}), 200
+            else:
+                return jsonify({'error': 'Error. these users have already matched, or you included profanity in your endorsement.'})
+        except:
+            return jsonify({'error': 'Are you sure you entered the email correctly?'})
+
+@app.route('/api/refer', methods=['POST'])
+def refer():
+    data = request.get_json()
+    self_ID = endorsementLib.getUserIDFromEmail(session["email"])
+    email1 = data.get("email1")
+    email2 = data.get("email2")
+
+    remRefs = resumeLib.fetchReferralsRemaining(self_ID)
+    if remRefs <= 0:
+        return jsonify({'error': 'Error: You are out of endorsements'})
+    
+    try:
+        result = referralLib.attemptReferral(self_ID, email1, email2)
+        print("\nresult is here:\n", result)
+        if result == True:
+            print("sucessful ref")
+            return jsonify({'result': 'Success! These users have been referred'})
+        else:
+            print("failure")
+            return jsonify({'error': 'these users have already been referred or are not compatible for a referral'})
+    except:
+        return jsonify({'error': 'Error: Ensure both emails are valid Dartmouth emails'})

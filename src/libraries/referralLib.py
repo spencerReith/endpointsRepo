@@ -58,12 +58,16 @@ def sexBasedCompatabilityCheck(myDB, a_userID, b_userID):
     print("b_userID = ", b_userID)
     applicantA = getApplicantFromDB(myDB, a_userID)
     applicantB = getApplicantFromDB(myDB, b_userID)
+    print("appA: ", applicantA)
+    print("appB: ", applicantB)
     a_sex = applicantA.getSex()
     a_pref = applicantA.getPrefSex()
     b_sex = applicantB.getSex()
     b_pref = applicantB.getPrefSex()
 
-    if (a_pref == b_sex) or (b_sex == 'b'):
+    print("preferences: ", a_sex, a_pref, b_sex, b_pref)
+
+    if (a_pref == b_sex) or (a_pref == 'b'):
         if (a_sex == b_pref) or (b_pref == 'b'):
             return True
     return False
@@ -111,35 +115,42 @@ def attemptReferral(self_ID, a_email, b_email):
     a = getUserID(a_email)
     b = getUserID(b_email)
     if sexBasedCompatabilityCheck(db, a, b) == False:
-        return("COMPATABILITY FAILURE")
+        # return("COMPATABILITY FAILURE")
+        return False
     else:
         ab_edgeWeight = getEdgeWeight(db, a, b)
         ba_edgeWeight = getEdgeWeight(db, b, a)
         if ab_edgeWeight == ba_edgeWeight == 1:
-            return("TYPE-1 FAILURE")
+            return False
+            # return("TYPE-1 FAILURE")
         if ab_edgeWeight == 9 or ba_edgeWeight == 9:
-            return("TYPE-9 FAILURE")
+            return False
+            # return("TYPE-9 FAILURE")
         if ab_edgeWeight == 14 or ba_edgeWeight == 14:
-            return("TYPE-14 FAILURE")
+            return False
+            # return("TYPE-14 FAILURE")
         if ab_edgeWeight == 0 or ba_edgeWeight == 0:
-            addReferralToDB(db, self_ID, a,b)
-            return("TYPE-0 FAILURE")
+            return False
+            # return("TYPE-0 FAILURE")
         if ab_edgeWeight == 1 and ba_edgeWeight == 'None':
             algLib.addInteractionToDB(b, a, 14)
             addReferralToDB(db, self_ID, a, b)
             decreaseReferralsRemaining(db, self_ID)
-            return("1-None Success")
+            return True
+            # return("1-None Success")
         if ab_edgeWeight == 'None' and ba_edgeWeight == 1:
             algLib.addInteractionToDB(a, b, 14)
             addReferralToDB(db, self_ID, a,b)
             decreaseReferralsRemaining(db, self_ID)
-            return("None-1 Success")
+            return True
+            # return("None-1 Success")
         if ab_edgeWeight == ba_edgeWeight == 'None':
             algLib.addInteractionToDB(a, b, 14)
             algLib.addInteractionToDB(b, a, 14)
             addReferralToDB(db, self_ID, a,b)
             decreaseReferralsRemaining(db, self_ID)
-            return("None-None Success")
+            return True
+            # return("None-None Success")
 
     
 def decreaseReferralsRemaining(myDB, userID):

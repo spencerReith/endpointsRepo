@@ -22,9 +22,8 @@ import pandas as pd
 
 
 db = 'main.db'
-cap = 10
 
-def getDeck(userID):
+def getDeck(userID, cap):
     selfID_Graph = algLib.buildSelfID_GraphFromDB(db, userID)
     ## get queue of userID's to swipe through
     userID_Queue = algorithm.getCompositeQueue(selfID_Graph, userID, cap)

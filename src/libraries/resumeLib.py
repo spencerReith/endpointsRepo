@@ -12,6 +12,8 @@ import sqlite3
 from classes.resume import Resume
 from datetime import date
 
+db = 'main.db'
+
 def createResumeTable(myDB):
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
@@ -58,7 +60,8 @@ def parseClassYear(email):
     year = startOfEmail[:-2]
     return year
 
-def fetchLatestSwipesUpdate(myDB, userID):
+def fetchLatestSwipesUpdate(userID):
+    myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
@@ -74,7 +77,8 @@ def fetchLatestSwipesUpdate(myDB, userID):
     conn.close()
     return latestUpdate
 
-def resetSwipes(myDB, userID, currentDate):
+def resetSwipes(userID, currentDate):
+    myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
@@ -84,8 +88,23 @@ def resetSwipes(myDB, userID, currentDate):
     conn.commit()
     conn.close()
 
+def decrementSwipes(userID):
+    curSwipes = fetchSwipesRemaining(userID)
+    newSwipes = curSwipes - 1
 
-def fetchSwipesRemaining(myDB, userID):
+    myDB = db
+    conn = sqlite3.connect(myDB)
+    cursor = conn.cursor()
+    query = '''
+    UPDATE resume_table SET swipes_remaining = ? WHERE userID = ?
+    '''
+    cursor.execute(query, (newSwipes, userID))
+    conn.commit()
+    conn.close()
+
+
+def fetchSwipesRemaining(userID):
+    myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
@@ -100,6 +119,41 @@ def fetchSwipesRemaining(myDB, userID):
     swipesRemaining = remSwipes[0]
     conn.close()
     return swipesRemaining
+
+def fetchEndorsementsRemaining(userID):
+    myDB = db
+    conn = sqlite3.connect(myDB)
+    cursor = conn.cursor()
+    query = '''
+    SELECT endorsements_remaining
+    FROM resume_table
+    WHERE userID = ?
+    '''
+    cursor.execute(query, (userID,))
+    results = cursor.fetchall()
+    for row in results:
+        remEnds = row
+    endorsementsRemaining = remEnds[0]
+    conn.close()
+    return endorsementsRemaining
+
+def fetchReferralsRemaining(userID):
+    myDB = db
+    conn = sqlite3.connect(myDB)
+    cursor = conn.cursor()
+    query = '''
+    SELECT referrals_remaining
+    FROM resume_table
+    WHERE userID = ?
+    '''
+    cursor.execute(query, (userID,))
+    results = cursor.fetchall()
+    for row in results:
+        remRefs = row
+    referralsRemaining = remRefs[0]
+    conn.close()
+    return referralsRemaining
+
 
                              
 def checkForSwipesUpdate(myDB, userID):

@@ -33,7 +33,8 @@ def createEndorsementsTable(myDB):
     conn.commit()
     conn.close()
 
-def getUserIDFromEmail(myDB, email):
+def getUserIDFromEmail(email):
+    myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
@@ -79,7 +80,7 @@ def attemptEndorsement(a_userID, b_email, message):
     if cencorshipLib.contains_prof(message):
         print("MESSAGE CENSORED: ", message)
         return False
-    b_userID = getUserIDFromEmail(db, b_email.lower())
+    b_userID = getUserIDFromEmail(b_email.lower())
     if onBlacklist(db, a_userID, b_userID):
         return False
     if onBlacklist(db, b_userID, a_userID):

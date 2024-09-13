@@ -109,13 +109,13 @@ def getCompositeQueue(G, selfID, cap):
     totalCap = cap
 
     ## would probably be best to change this math up if we're doing stacks larger than 10... will still work well but can get more exact. Still could be right if we are considering allowing you to swipe through 4 full stakcs, regardless of how many people are in them.
-    if len(current_offers) > 35:
-        ## we never want to show more than 7 offers in one stack
-        response_cap = 7 ## this will also need to be scaled by the total cap if we're changing it past 10
+    if len(current_offers) > 28:
+        ## we never want to show more than 28 offers in a stack
+        response_cap = 28
     else:
         ## assume you'll go through 4 stacks of people in a day
         ## assume we want you to see 80% of your active (and unviewed) offers a day
-        response_cap = math.ceil(.8 * len(current_offers) / 4)
+        response_cap = math.ceil(.8 * len(current_offers))
 
     unmet_cap = totalCap - response_cap
 
