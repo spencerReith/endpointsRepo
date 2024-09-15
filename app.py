@@ -169,9 +169,11 @@ def login():
         return jsonify({"error": "Email not found"}), 404
 
 ## other user's profile
-@app.route('/api/otherProfile', methods=["GET"])
+@app.route('/api/othprf', methods=["POST"])
 def other_profile():
-    userID = request.args.get('userID')
+    data = request.get_json()
+    userID = data.get('userID')
+
     print("UserID as stated:", userID)
     profileDict = getterLib.getProfile(userID)
     endRefs = getterLib.getEndRefs(userID)
@@ -190,6 +192,29 @@ def other_profile():
                 "referralsRemaining": endRefs['remainingReferrals'],
             }
         })
+
+        # ## other user's profile
+        # @app.route('/api/otherProfile', methods=["GET"])
+        # def other_profile():
+        #     userID = request.args.get('userID')
+        #     print("UserID as stated:", userID)
+        #     profileDict = getterLib.getProfile(userID)
+        #     endRefs = getterLib.getEndRefs(userID)
+
+        #     return jsonify({
+        #             "user": {
+        #                 "name": profileDict['name'],
+        #                 "email": profileDict['email'],
+        #                 "major": profileDict['major'],
+        #                 "minor": profileDict['minor'],
+        #                 "skills": profileDict['skills'],
+        #                 "interests": profileDict['interests'],
+        #                 "tindarIndex": profileDict['tindarIndex'],
+        #                 "endorsements": profileDict['endorsements'],
+        #                 "endorsementsRemaining": endRefs['remainingEndorsements'],
+        #                 "referralsRemaining": endRefs['remainingReferrals'],
+        #             }
+        #         })
 
 ## personal profile
 @app.route('/api/userProfile', methods=["GET"])
@@ -255,6 +280,7 @@ def leaderboard():
         profilesDict[i] = leader
         i+=1
 
+    print(profilesDict)
     return jsonify(profilesDict)
 
 ## connections
@@ -266,18 +292,21 @@ def connections():
     print("\n\nConnections Dict: ", connectionsDict)
 
     swipeMatchProfiles = {}
-    refMatchProfiles = {}
+    refs = {}
     for swipeUserID in connectionsDict['swipingMatches']:
         swipeMatchProfiles[swipeUserID] = getterLib.getProfile(swipeUserID)
-    for refUserID in connectionsDict['referrals']:
-        refMatchProfiles[refUserID] = getterLib.getProfile(refUserID)
+    for ref in connectionsDict['referrals']:
+        refMatchUserID = ref['ref_connect']
+        refFromUserName = endorsementLib.getNameFromUserID(ref['from_user'])
+        refs[refFromUserName] = getterLib.getProfile(refMatchUserID)
     ## return full profiles of connections
     connectionProfiles = {
         'selfID':userID,
         'swipeMatches':swipeMatchProfiles,
-        'refMatches':refMatchProfiles
+        'refs': refs
         }
     
+    print("\nconnections Profile: \n\n", connectionProfiles)
     return jsonify(connectionProfiles)
 
 @app.route('/messaging', methods=["GET", "POST"])
@@ -298,6 +327,9 @@ if __name__ == '__main__':
 def endorse():
     data = request.get_json()
     to_email = data.get("email")
+    if to_email == session['email']:
+        print('\nattempted self endorsement\n\n')
+        return jsonify({'error': 'You cannot endorse yourself.'})
     msg = data.get("msg")
     a_email = session["email"]
     a_userID = endorsementLib.getUserIDFromEmail(a_email)
@@ -321,18 +353,19 @@ def refer():
     email1 = data.get("email1")
     email2 = data.get("email2")
 
+    if email1 == session['email'] or email2 == session['email']:
+        print('\nattempted self referrel\n\n')
+        return jsonify({'error': 'You cannot refer yourself.'})
+
     remRefs = resumeLib.fetchReferralsRemaining(self_ID)
     if remRefs <= 0:
         return jsonify({'error': 'Error: You are out of endorsements'})
     
     try:
         result = referralLib.attemptReferral(self_ID, email1, email2)
-        print("\nresult is here:\n", result)
         if result == True:
-            print("sucessful ref")
             return jsonify({'result': 'Success! These users have been referred'})
         else:
-            print("failure")
             return jsonify({'error': 'these users have already been referred or are not compatible for a referral'})
     except:
         return jsonify({'error': 'Error: Ensure both emails are valid Dartmouth emails'})

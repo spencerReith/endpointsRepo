@@ -50,6 +50,23 @@ def getUserIDFromEmail(email):
         conn.close()
     return userID
 
+def getNameFromUserID(userID):
+    myDB = db
+    conn = sqlite3.connect(myDB)
+    cursor = conn.cursor()
+    query = '''
+    SELECT name FROM applicant_pool WHERE userID = ?;
+    '''
+    result = cursor.execute(query, (userID,)).fetchone()
+    conn.commit()
+    if result == None:
+        conn.close()
+        return False
+    else:
+        name = result[0]
+        conn.close()
+    return name
+
 def onBlacklist(myDB, list_manager, blacklistee):
     weight = 9 ## code for blacklist
     conn = sqlite3.connect(myDB)
@@ -112,4 +129,8 @@ def fetchEndorsements(userID):
     else:
         conn.close()
         ## returns a list of tuples representing who the endorsement is from, and what their message says
-        return result
+        newRes = []
+        for tuple in result:
+            newRes.append((getNameFromUserID(tuple[0]), tuple[1]))
+        print("heres the result: ", newRes)
+        return newRes

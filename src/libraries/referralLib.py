@@ -174,9 +174,10 @@ def getReferralInfo(myDB, referredUser):
     cursor.execute(query, (referredUser, referredUser))
     rows = cursor.fetchall()
     for row in rows:
-        from_user = row[0]
-        other_user = row[1]
-        refsList.append((from_user, other_user))
+        from_userID = row[0]
+        a_userID = row[1]
+        b_userID = row[2]
+        refsList.append((from_userID, a_userID, b_userID))
     conn.close()
     return(refsList)
 

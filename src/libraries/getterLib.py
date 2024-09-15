@@ -52,6 +52,7 @@ def getProfile(userID):
     endorsements = endorsementLib.fetchEndorsements(userID)
 
     profile = {
+        'userID' : userID,
         'name': name,
         'email': email,
         'classYear' : classYear,
@@ -67,6 +68,7 @@ def getProfile(userID):
 
 
 def getResumeDF(userID):
+    print("\n\nuserID where there's an issue:", userID)
     conn = sqlite3.connect(db)
     query = "SELECT * FROM resume_table WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
@@ -163,7 +165,14 @@ def getConnections(userID):
     
     
     referrals = referralLib.getReferralInfo(db, userID)
-    print("referals", referrals)
+    refsList = []
+    for ref in referrals:
+        if ref[1] == userID:
+            refsList.append({'from_user' : ref[0], 'ref_connect' : ref[2]})
+        if ref[2] == userID:
+            refsList.append({'from_user' : ref[0], 'ref_connect' : ref[1]})
+
+    print("referals", refsList)
 
     
                     # ## if a_userID is not one's self, it's the person he or she was referred to
@@ -175,9 +184,10 @@ def getConnections(userID):
     connections = {
         'userID' : userID,
         'swipingMatches' : swipingMatches,
-        'referrals' : referrals
+        'referrals' : refsList
     }
-
+    
+    print("\nsending connections. Refs list:\n\n", refsList)
     return connections
 
 ##getEndorsements
