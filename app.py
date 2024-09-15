@@ -4,6 +4,7 @@ import io
 import base64
 import sys
 import json
+import roman
 from datetime import date
 
 
@@ -309,16 +310,41 @@ def connections():
     print("\nconnections Profile: \n\n", connectionProfiles)
     return jsonify(connectionProfiles)
 
-@app.route('/messaging', methods=["GET", "POST"])
+@app.route('/api/messaging', methods=['POST'])
 def messaging():
-    self_userID = session['userID']
-    email = "a.26@dartmouth.edu"
-    if request.method == "POST":
-        provided_message = request.form.get("message")
-        messagingLib.sendMessage(session["email"], email, provided_message)
+    print("\n\n\nMade it to mesaging!")
+    self_userID = 49485
+    b_userID = 49486
+    self_name = endorsementLib.getNameFromUserID(self_userID)
+    b_name = endorsementLib.getNameFromUserID(b_userID)
 
-    mTupleList = messagingLib.retrieveMessages(self_userID, email)
-    return render_template("messaging.html", email=email, mTupleList=mTupleList)
+    messages = messagingLib.retrieveMessages(self_userID, b_userID)
+    newMessagesList = []
+    ## get messages into new object containing roman numeral deliniating which message it is
+    for i in range(len(messages)):
+        print("message: ", messages[i])
+        print("userID: ", messages[i][0])
+        print("self_userID", self_userID)
+        numeral = roman.toRoman(i+1)
+        if messages[i][0] == str(self_userID):
+            sender_name = self_name
+        else:
+            sender_name = b_name
+        newTuple = (numeral, sender_name, messages[i][1])
+        newMessagesList.append(newTuple)
+    
+    print("messages, ", messages)
+    print("new messages list: ", newMessagesList)
+
+    return jsonify(newMessagesList)
+    # self_userID = session['userID']
+    # email = "a.26@dartmouth.edu"
+    # if request.method == "POST":
+    #     provided_message = request.form.get("message")
+    #     messagingLib.sendMessage(session["email"], email, provided_message)
+
+    # mTupleList = messagingLib.retrieveMessages(self_userID, email)
+    # return render_template("messaging.html", email=email, mTupleList=mTupleList)
 
 if __name__ == '__main__':
     app.run()

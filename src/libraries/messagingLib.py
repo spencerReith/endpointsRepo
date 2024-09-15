@@ -55,8 +55,7 @@ def retrieveRawMessageString(user1_ID, user2_ID):
         rawMessageString = None
     return rawMessageString
 
-def retrieveMessages(self_userID, other_email):
-    other_userID = authenticationLib.pullUserID(other_email)
+def retrieveMessages(self_userID, other_userID):
     rawMessageString = retrieveRawMessageString(self_userID, other_userID)
     if rawMessageString == None:
         return None
@@ -92,7 +91,7 @@ def concatonateMessage(user1_ID, user2_ID, concatString):
     conn.close()
 
 
-def sendMessage(fromEmail, toEmail, message):
+def sendMessage(fromUserID, toUserID, message):
     ## Remove problematic characters from message ##
     message_list = list(message)
     for i in range(len(message_list)):
@@ -100,8 +99,8 @@ def sendMessage(fromEmail, toEmail, message):
             message_list[i] = '_'
     message = ''.join(message_list)
             
-    fromUserID = authenticationLib.pullUserID(fromEmail)
-    toUserID = authenticationLib.pullUserID(toEmail)
+    # fromUserID = authenticationLib.pullUserID(fromEmail)
+    # toUserID = authenticationLib.pullUserID(toEmail)
     ## create properly formatted message string
     concatString = str(fromUserID) + "}" + message + "}"
     concatonateMessage(fromUserID, toUserID, concatString)
