@@ -194,29 +194,6 @@ def other_profile():
             }
         })
 
-        # ## other user's profile
-        # @app.route('/api/otherProfile', methods=["GET"])
-        # def other_profile():
-        #     userID = request.args.get('userID')
-        #     print("UserID as stated:", userID)
-        #     profileDict = getterLib.getProfile(userID)
-        #     endRefs = getterLib.getEndRefs(userID)
-
-        #     return jsonify({
-        #             "user": {
-        #                 "name": profileDict['name'],
-        #                 "email": profileDict['email'],
-        #                 "major": profileDict['major'],
-        #                 "minor": profileDict['minor'],
-        #                 "skills": profileDict['skills'],
-        #                 "interests": profileDict['interests'],
-        #                 "tindarIndex": profileDict['tindarIndex'],
-        #                 "endorsements": profileDict['endorsements'],
-        #                 "endorsementsRemaining": endRefs['remainingEndorsements'],
-        #                 "referralsRemaining": endRefs['remainingReferrals'],
-        #             }
-        #         })
-
 ## personal profile
 @app.route('/api/userProfile', methods=["GET"])
 def profile():
@@ -312,42 +289,52 @@ def connections():
 
 @app.route('/api/messaging', methods=['POST'])
 def messaging():
-    print("\n\n\nMade it to mesaging!")
-    self_userID = 49485
-    b_userID = 49486
+    data = request.get_json()
+    print("data: ", data)
+
+    self_userID = data.get('selfUserID')
+    b_userID = int(data.get('bUserID'))
+    print("b_userID here:", b_userID)
     self_name = endorsementLib.getNameFromUserID(self_userID)
     b_name = endorsementLib.getNameFromUserID(b_userID)
+    print("bName:", b_name)
 
     messages = messagingLib.retrieveMessages(self_userID, b_userID)
     newMessagesList = []
     ## get messages into new object containing roman numeral deliniating which message it is
-    for i in range(len(messages)):
-        print("message: ", messages[i])
-        print("userID: ", messages[i][0])
-        print("self_userID", self_userID)
-        numeral = roman.toRoman(i+1)
-        if messages[i][0] == str(self_userID):
-            sender_name = self_name
+    try:
+        if len(messages) == 0:
+            return jsonify([])
+        for i in range(len(messages)):
+            numeral = roman.toRoman(i+1)
+            if messages[i][0] == str(self_userID):
+                sender_name = self_name
+            else:
+                sender_name = b_name
+            newTuple = (numeral, sender_name, messages[i][1])
+            newMessagesList.append(newTuple)
+        
+        return jsonify(newMessagesList)
+    except:
+        return jsonify({'error' : 'Error collecting messages'})
+
+@app.route('/api/sendMessage', methods=['POST'])
+def sendMessage():
+    self_userID = session['userID']
+    data = request.get_json()
+    b_userID = data.get('bUserID')
+    msg = data.get('msg')
+    print(msg)
+    try:
+        result = messagingLib.sendMessage(self_userID, b_userID, msg)
+        print("result: ", result)
+        if result:
+            return jsonify({'result' : 'successful'})
         else:
-            sender_name = b_name
-        newTuple = (numeral, sender_name, messages[i][1])
-        newMessagesList.append(newTuple)
-    
-    print("messages, ", messages)
-    print("new messages list: ", newMessagesList)
+            return jsonify({'error' : 'Message failed. Ensure your message has no profanity in it.'})
+    except:
+        return jsonify({'error' : 'Message failed. Ensure your message has no profanity in it.'})
 
-    return jsonify(newMessagesList)
-    # self_userID = session['userID']
-    # email = "a.26@dartmouth.edu"
-    # if request.method == "POST":
-    #     provided_message = request.form.get("message")
-    #     messagingLib.sendMessage(session["email"], email, provided_message)
-
-    # mTupleList = messagingLib.retrieveMessages(self_userID, email)
-    # return render_template("messaging.html", email=email, mTupleList=mTupleList)
-
-if __name__ == '__main__':
-    app.run()
 
 @app.route('/api/endorse', methods=['POST'])
 def endorse():
@@ -395,3 +382,26 @@ def refer():
             return jsonify({'error': 'these users have already been referred or are not compatible for a referral'})
     except:
         return jsonify({'error': 'Error: Ensure both emails are valid Dartmouth emails'})
+
+@app.route('/api/blacklist', methods=['POST'])
+def blacklist():
+    print("inside of blacklist")
+    data = request.get_json()
+    self_ID = session["userID"]
+    email = data.get("email")
+    b_userID = endorsementLib.getUserIDFromEmail(email)
+
+    if email == session['email']:
+        print('\nattempted self blacklist\n\n')
+        return jsonify({'error': 'You cannot blacklist yourself.'})
+    
+    ## insert interaction with blacklist code
+    try:
+        algLib.addInteractionToDB(self_ID, b_userID, 9)
+        return jsonify({'result' : 'successful blacklist'})
+    except:
+        return jsonify({'error': 'Error in blacklisting.'})
+
+
+if __name__ == '__main__':
+    app.run()

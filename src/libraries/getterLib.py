@@ -138,11 +138,15 @@ def getConnections(userID):
     ## filter by swiping connections, and refferals
     swiping_df = df[(df['weight'] == 1)]
     referrals_df = df[(df['weight'] == 14)]
-    print("refs df: ", referrals_df)
+    blacklist_df = df[(df['weight'] == 9)]
 
     ## convert swiping connections and referrals to dictionaries
     raw_swiping_interactions = swiping_df.to_dict(orient='list')
     raw_referrals_dict = referrals_df.to_dict(orient='list')
+    raw_blacklist_dict = blacklist_df.to_dict(orient='list')
+    blacklist_a_Users = raw_blacklist_dict['a_userID']
+    blacklist_b_Users = raw_blacklist_dict['b_userID']
+    print("Raw_blacklist_dict: ", raw_blacklist_dict, blacklist_a_Users, blacklist_b_Users)
     seenDict = {}
 
     ## iterate through swiping interactions
@@ -167,9 +171,14 @@ def getConnections(userID):
     referrals = referralLib.getReferralInfo(db, userID)
     refsList = []
     for ref in referrals:
+        print("ref: ", ref)
         if ref[1] == userID:
+            if ref[2] in blacklist_a_Users or ref[2] in blacklist_b_Users:
+                continue
             refsList.append({'from_user' : ref[0], 'ref_connect' : ref[2]})
         if ref[2] == userID:
+            if ref[1] in blacklist_a_Users or ref[1] in blacklist_b_Users:
+                continue
             refsList.append({'from_user' : ref[0], 'ref_connect' : ref[1]})
 
     print("referals", refsList)
