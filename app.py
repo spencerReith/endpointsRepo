@@ -204,7 +204,7 @@ def profile():
     endRefs = getterLib.getEndRefs(userID)
     print("\n\nRetrieved Profile:\n")
     print(profileDict)
-   
+    histoCode = analyticsLib.getHistogram(userID)
     return jsonify({
             "user": {
                 "name": profileDict['name'],
@@ -216,7 +216,8 @@ def profile():
                 "tindarIndex": profileDict['tindarIndex'],
                 "endorsements": profileDict['endorsements'],
                 "endorsementsRemaining": endRefs['remainingEndorsements'],
-                "referralsRemaining": endRefs['remainingReferrals']
+                "referralsRemaining": endRefs['remainingReferrals'],
+                "histogramHTML": histoCode
             }
         })
 
@@ -278,6 +279,7 @@ def connections():
         refFromUserName = endorsementLib.getNameFromUserID(ref['from_user'])
         refs[refFromUserName] = getterLib.getProfile(refMatchUserID)
     ## return full profiles of connections
+    print("html string from analytics lib: ", analyticsLib.getHistogram(userID))
     connectionProfiles = {
         'selfID':userID,
         'swipeMatches':swipeMatchProfiles,
