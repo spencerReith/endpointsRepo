@@ -26,8 +26,8 @@ def createUser(email, classYear, sex, prefSex):
     algLib.addApplicantToDB(db, newApplicant)
     return userID
 
-def createProfile(userID, major, minor, skills, interests):
-    newResume = Resume(userID, major, minor, skills, interests)
+def createProfile(userID, major, minor, height, skills, interests):
+    newResume = Resume(userID, major, minor, height, skills, interests)
     resumeLib.addResumeToDB(db, newResume)
 
 def assignUserID(name):

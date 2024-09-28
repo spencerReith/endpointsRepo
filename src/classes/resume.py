@@ -19,12 +19,13 @@ from datetime import date
 
 class Resume:
     wordInputCap = 10
-    def __init__(self, userID, major, minor, skills, interests):
+    def __init__(self, userID, major, minor, height, skills, interests):
         self.userID = userID
         self.major = major
         self.minor = minor
         self.skills = skills
         self.interests = interests
+        self.height = height
 
         self.referrals_remaining = 3
         self.endorsements_remaining = 5
@@ -40,6 +41,9 @@ class Resume:
 
     def getMinor(self):
         return self.minor
+    
+    def getHeight(self):
+        return self.height
 
     def getSkillsString(self):
         skillsString = ""

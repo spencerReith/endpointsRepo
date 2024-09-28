@@ -77,6 +77,7 @@ def createResume():
         prefSex = data.get('prefSex')
         major = data.get('major')
         minor = data.get('minor')
+        height = data.get('heightTotal')
         skill1 = data.get('skill1')
         skill2 = data.get('skill2')
         skill3 = data.get('skill3')
@@ -109,7 +110,7 @@ def createResume():
         
         userID = setterLib.createUser(email, 2026, sex, prefSex)
         authenticationLib.insert_passcode(userID, email, password)
-        setterLib.createProfile(userID, major, minor, skills, interests)
+        setterLib.createProfile(userID, major, minor, height, skills, interests)
         analyticsLib.addTindarIndexToDB(userID, tindarIndex)
         
         session['userID'] = userID
@@ -340,7 +341,9 @@ def sendMessage():
 
 @app.route('/api/endorse', methods=['POST'])
 def endorse():
+    print("entering the endorsement")
     data = request.get_json()
+    print("\nheres the data: ", data)
     to_email = data.get("email")
     if to_email == session['email']:
         print('\nattempted self endorsement\n\n')
@@ -349,7 +352,8 @@ def endorse():
     a_email = session["email"]
     a_userID = endorsementLib.getUserIDFromEmail(a_email)
     ## if the user is out of swipes, don't let the endorsement go through
-    endsRemaining = resumeLib.fetchEndorsementsRemaining(endorsementLib.getUserIDFromEmail(to_email))
+    endsRemaining = resumeLib.fetchEndorsementsRemaining(a_userID)
+    print(endsRemaining)
     if endsRemaining <= 0:
             return jsonify({'error': 'No more endorsements remaining.'}), 400
     else:
@@ -392,6 +396,9 @@ def blacklist():
     self_ID = session["userID"]
     email = data.get("email")
     b_userID = endorsementLib.getUserIDFromEmail(email)
+
+    if b_userID == False:
+        return jsonify({'error' : 'User does not exist'})
 
     if email == session['email']:
         print('\nattempted self blacklist\n\n')

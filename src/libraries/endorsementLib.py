@@ -98,6 +98,8 @@ def attemptEndorsement(a_userID, b_email, message):
         print("MESSAGE CENSORED: ", message)
         return False
     b_userID = getUserIDFromEmail(b_email.lower())
+    if b_userID == False:
+        return False
     if onBlacklist(db, a_userID, b_userID):
         return False
     if onBlacklist(db, b_userID, a_userID):

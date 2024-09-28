@@ -46,6 +46,7 @@ def getProfile(userID):
     classYear = 2026
     major = res_df['major'].to_list()
     minor = res_df['minor'].to_list()
+    height = res_df['height'].to_list()
     skills = res_df['skills'].to_list()
     interests = res_df['interests'].to_list()
     tindarIndex = stats_df['tindarIndex'].to_list()
@@ -58,6 +59,7 @@ def getProfile(userID):
         'classYear' : classYear,
         'major' : major,
         'minor' : minor,
+        'height' : height,
         'skills' : skills,
         'interests' : interests,
         'tindarIndex' : tindarIndex,

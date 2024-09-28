@@ -1,6 +1,7 @@
 # Library for resume related functions
 import os
 import sys
+import re
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -22,6 +23,7 @@ def createResumeTable(myDB):
         userID INTEGER PRIMARY KEY,
         major TEXT,
         minor TEXT,
+        height TEXT,
         skills TEXT,
         interests TEXT,
         referrals_remaining INT,
@@ -38,15 +40,16 @@ def addResumeToDB(myDB, res):
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
-    INSERT INTO resume_table (userID, major, minor, skills, interests, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    INSERT INTO resume_table (userID, major, minor, height, skills, interests, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     '''
-    cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getSkillsString(), res.getInterestsString(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update()))
+    cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getHeight(), res.getSkillsString(), res.getInterestsString(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update()))
     conn.commit()
     conn.close()
 
 def parseName(email):
-    nameArray = email.replace('.26@dartmouth.edu', '').split('.')
+    modified_email = re.sub(r'\.(24|25|26|27|28)@dartmouth\.edu$', '', email)
+    nameArray = modified_email.split('.')
     fullName = ""
     for n in nameArray:
         firstLetter = n[0].upper()
