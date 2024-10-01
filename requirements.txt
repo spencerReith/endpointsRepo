@@ -1,4 +1,4 @@
-gunicorn==20.x
+gunicorn
 better-profanity==0.7.0
 blinker==1.8.2
 click==8.1.7
