@@ -52,6 +52,9 @@ def parseName(email):
     nameArray = modified_email.split('.')
     fullName = ""
     for n in nameArray:
+        if len(n) == 1:
+            fullName = fullName + n + '. '
+            continue
         firstLetter = n[0].upper()
         name = firstLetter + n[1:]
         fullName = fullName + name + ' '

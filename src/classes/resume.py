@@ -25,7 +25,7 @@ class Resume:
         self.minor = minor
         self.skills = skills
         self.interests = interests
-        self.height = height
+        self.height = height[0] + '\'' + height[1:] + '\"'
 
         self.referrals_remaining = 3
         self.endorsements_remaining = 5
@@ -48,15 +48,15 @@ class Resume:
     def getSkillsString(self):
         skillsString = ""
         for skill in self.skills:
-            skillsString = skillsString + skill + ','
-        skillsString = str(skillsString[:-1])
+            skillsString = skillsString + skill + ', '
+        skillsString = str(skillsString[:-2])
         return skillsString
     
     def getInterestsString(self):
         interestsString = ""
         for interest in self.interests:
-            interestsString = interestsString + interest + ','
-        interestsString = str(interestsString[:-1])
+            interestsString = interestsString + interest + ', '
+        interestsString = str(interestsString[:-2])
         return interestsString
     
     def getReferrals_Remaining(self):
