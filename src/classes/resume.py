@@ -25,7 +25,7 @@ class Resume:
         self.minor = minor
         self.skills = skills
         self.interests = interests
-        self.height = height[0] + '\'' + height[1:] + '\"'
+        self.height = height
 
         self.referrals_remaining = 3
         self.endorsements_remaining = 5

@@ -54,18 +54,18 @@ def getApplicantFromDB(myDB, userID):
     return a
 
 def sexBasedCompatabilityCheck(myDB, a_userID, b_userID):
-    print("a_userID = ", a_userID)
-    print("b_userID = ", b_userID)
+    # print("a_userID = ", a_userID)
+    # print("b_userID = ", b_userID)
     applicantA = getApplicantFromDB(myDB, a_userID)
     applicantB = getApplicantFromDB(myDB, b_userID)
-    print("appA: ", applicantA)
-    print("appB: ", applicantB)
+    # print("appA: ", applicantA)
+    # print("appB: ", applicantB)
     a_sex = applicantA.getSex()
     a_pref = applicantA.getPrefSex()
     b_sex = applicantB.getSex()
     b_pref = applicantB.getPrefSex()
 
-    print("preferences: ", a_sex, a_pref, b_sex, b_pref)
+    # print("preferences: ", a_sex, a_pref, b_sex, b_pref)
 
     if (a_pref == b_sex) or (a_pref == 'b'):
         if (a_sex == b_pref) or (b_pref == 'b'):

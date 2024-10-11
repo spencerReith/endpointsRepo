@@ -35,15 +35,17 @@ def getDeck(userID, cap):
     return deck
 
 def getProfile(userID):
-    print("\n\nUserID:", userID)
+    # print("\n\nUserID:", userID)
     res_df = getResumeDF(userID)
     applicant_df = getApplicantDF(userID)
     stats_df = getStatisticsDF(userID)
-    print("\n\ApplicantDF:\n", applicant_df)
+
+    print(res_df)
+    # print("\n\ApplicantDF:\n", applicant_df)
 
     name = applicant_df['name'][0]
     email = applicant_df['email'][0]
-    classYear = 2026
+    classYear = "20" + str(applicant_df['classYear'][0])
     major = res_df['major'].to_list()
     minor = res_df['minor'].to_list()
     height = res_df['height'].to_list()
@@ -70,7 +72,6 @@ def getProfile(userID):
 
 
 def getResumeDF(userID):
-    print("\n\nuserID where there's an issue:", userID)
     conn = sqlite3.connect(db)
     query = "SELECT * FROM resume_table WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
@@ -148,7 +149,7 @@ def getConnections(userID):
     raw_blacklist_dict = blacklist_df.to_dict(orient='list')
     blacklist_a_Users = raw_blacklist_dict['a_userID']
     blacklist_b_Users = raw_blacklist_dict['b_userID']
-    print("Raw_blacklist_dict: ", raw_blacklist_dict, blacklist_a_Users, blacklist_b_Users)
+    # print("Raw_blacklist_dict: ", raw_blacklist_dict, blacklist_a_Users, blacklist_b_Users)
     seenDict = {}
 
     ## iterate through swiping interactions
@@ -173,7 +174,7 @@ def getConnections(userID):
     referrals = referralLib.getReferralInfo(db, userID)
     refsList = []
     for ref in referrals:
-        print("ref: ", ref)
+        # print("ref: ", ref)
         if ref[1] == userID:
             if ref[2] in blacklist_a_Users or ref[2] in blacklist_b_Users:
                 continue
@@ -183,7 +184,7 @@ def getConnections(userID):
                 continue
             refsList.append({'from_user' : ref[0], 'ref_connect' : ref[1]})
 
-    print("referals", refsList)
+    # print("referals", refsList)
 
     
                     # ## if a_userID is not one's self, it's the person he or she was referred to
@@ -198,7 +199,7 @@ def getConnections(userID):
         'referrals' : refsList
     }
     
-    print("\nsending connections. Refs list:\n\n", refsList)
+    # print("\nsending connections. Refs list:\n\n", refsList)
     return connections
 
 ##getEndorsements

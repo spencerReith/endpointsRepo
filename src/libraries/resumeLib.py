@@ -48,12 +48,12 @@ def addResumeToDB(myDB, res):
     conn.close()
 
 def parseName(email):
-    modified_email = re.sub(r'\.(24|25|26|27|28)@dartmouth\.edu$', '', email)
+    modified_email = re.sub(r'\.(25|26|27|28)@dartmouth\.edu$', '', email)
     nameArray = modified_email.split('.')
     fullName = ""
     for n in nameArray:
         if len(n) == 1:
-            fullName = fullName + n + '. '
+            fullName = fullName + n.upper() + '. '
             continue
         firstLetter = n[0].upper()
         name = firstLetter + n[1:]
@@ -63,7 +63,7 @@ def parseName(email):
 
 def parseClassYear(email):
     startOfEmail = email.strip("@dartmouth.edu")
-    year = startOfEmail[:-2]
+    year = startOfEmail[-2:]
     return year
 
 def fetchLatestSwipesUpdate(userID):

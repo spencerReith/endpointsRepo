@@ -134,5 +134,4 @@ def fetchEndorsements(userID):
         newRes = []
         for tuple in result:
             newRes.append((getNameFromUserID(tuple[0]), tuple[1]))
-        print("heres the result: ", newRes)
         return newRes

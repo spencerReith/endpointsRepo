@@ -31,7 +31,7 @@ def getNodesFromDB(myDB):
     nodes = {}
     for row in rows:
         key = int(row[0])
-        nodes[key] = Applicant(int(row[1]), row[3], row[4], row[5], row[6])
+        nodes[key] = Applicant(int(row[1]), row[3], row[5], row[6])
     conn.close()
     return nodes
 

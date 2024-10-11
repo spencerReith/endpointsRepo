@@ -25,7 +25,7 @@ def parseMessage(messageString):
     if messageString == None:
         return None
     splitArray = messageString.strip('}').split('}')
-    print(len(splitArray))
+    # print(len(splitArray))
     mTupleList = []
     for i in range(0, len(splitArray), 2):
         messageTuple = (splitArray[i], splitArray[i+1])

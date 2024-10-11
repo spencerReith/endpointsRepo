@@ -38,4 +38,4 @@ def alphanumericString(length):
 
 if __name__ == '__main__':
     send_verification_email("spencer.k.reith.26@dartmouth.edu")
-    print("\nVerification email sent.\n")
+    # print("\nVerification email sent.\n")

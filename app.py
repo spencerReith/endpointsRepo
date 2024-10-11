@@ -69,58 +69,61 @@ def verifyEmail2():
 ## create resume
 @app.route('/api/register', methods=["GET", "POST"])
 def createResume():
+    print("\n\nATTENTION – attempting registration\n\n")
     if request.method == "POST":
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
-        sex = data.get('sex')
-        prefSex = data.get('prefSex')
-        major = data.get('major')
-        minor = data.get('minor')
-        height = data.get('heightTotal')
-        skill1 = data.get('skill1')
-        skill2 = data.get('skill2')
-        skill3 = data.get('skill3')
+        data = request.form.to_dict()
+        email = data['email']
+        password = data['password']
+        sex = data['sex']
+        prefSex = data['prefSex']
+        major = data['major']
+        minor = data['minor']
+        height = data['height']
+        skill1 = data['skill1']
+        skill2 = data['skill2']
+        skill3 = data['skill3']
         skills = [skill1, skill2, skill3]
-        interest1 = data.get('interest1')
-        interest2 = data.get('interest2')
-        interest3 = data.get('interest3')
+        interest1 = data['interest1']
+        interest2 = data['interest2']
+        interest3 = data['interest3']
         interests = [interest1, interest2, interest3]
-        rawGPA = data.get('gpa')
-        rawRP = data.get('ricePurity')
+        rawGPA = data['gpa']
+        rawRP = data['ricePurity']
         try:
             gpa = float(rawGPA)
             ricePurity = float(rawRP)
             tindarIndex = analyticsLib.calcTindarIndex(gpa, ricePurity)
         except:
             return jsonify({'error': 'Registration error'}), 400
-       
+
         if cencorshipLib.is_banned(email):
-            return jsonify({'error': 'Registration error: User is Banned'}), 400
+            return jsonify({'error': 'Registration error: User is Banned'}), 401
         if getterLib.overCharLimit('skills', skills):
-            return jsonify({'error': 'Registration error: Skills over Char Limit'}), 400
+            return jsonify({'error': 'Registration error: Skills over Char Limit'}), 402
         if getterLib.overCharLimit('interests', interests):
-            return jsonify({'error': 'Registration error: Interests over Char Limit'}), 400
+            return jsonify({'error': 'Registration error: Interests over Char Limit'}), 403
         if cencorshipLib.contains_prof(skills):
-            return jsonify({'error': 'Registration error: Profanity in Skills'}), 400
+            return jsonify({'error': 'Registration error: Profanity in Skills'}), 404
         if cencorshipLib.contains_prof(interests):
-            return jsonify({'error': 'Registration error: Profanity in Interests'}), 400
+            return jsonify({'error': 'Registration error: Profanity in Interests'}), 405
         if authenticationLib.emailInDB(email):
-            return jsonify({'error': 'Registration error: Email Already Registered'}), 400
-        
-        userID = setterLib.createUser(email, 2026, sex, prefSex)
+            return jsonify({'error': 'Registration error: Email Already Registered'}), 406
+
+        userID = setterLib.createUser(email, sex, prefSex)
         authenticationLib.insert_passcode(userID, email, password)
         setterLib.createProfile(userID, major, minor, height, skills, interests)
         analyticsLib.addTindarIndexToDB(userID, tindarIndex)
         
+        # session = {}
         session['userID'] = userID
         session['email'] = email
         newDeck = getterLib.getDeck(userID, 40)
+        print('deck as defined: ', newDeck)
         session['deck'] = newDeck
-
+        print('session as defined: ', session)
         return jsonify({'message': 'Registration successful'})
     else:
-        return jsonify({'error': 'Registration error'}), 400
+        return jsonify({'error': 'Registration error'}), 407
 
 @app.route('/api/login', methods=["POST"])
 def login():
@@ -132,7 +135,7 @@ def login():
             userID = int(authenticationLib.pullUserID(email))
             session['userID'] = userID
             session['email'] = email
-            print("1. heres the session:\n", session)
+            # print("1. heres the session:\n", session)
             #############
             ## Get deck only if one hasn't been pulled that day
             #############
@@ -150,7 +153,7 @@ def login():
                 newDeck = getterLib.getDeck(userID, remSwipes)
                 session['deck'] = newDeck
 
-            print("2. heres the session:\n", session)
+            # print("2. heres the session:\n", session)
             #############
             #############
 
@@ -160,7 +163,7 @@ def login():
             # Calculate the size of the session data in bytes
             session_size = len(session_data.encode('utf-8'))
                 
-            print("\n3. session_size:", session_size)
+            # print("\n3. session_size:", session_size)
             # Return a JSON response with the redirect URL
             # This should show all the session variables
             return jsonify({"redirect": "/recruiting"})
@@ -176,7 +179,6 @@ def other_profile():
     data = request.get_json()
     userID = data.get('userID')
 
-    print("UserID as stated:", userID)
     profileDict = getterLib.getProfile(userID)
     endRefs = getterLib.getEndRefs(userID)
 
@@ -186,6 +188,8 @@ def other_profile():
                 "email": profileDict['email'],
                 "major": profileDict['major'],
                 "minor": profileDict['minor'],
+                'height': profileDict['height'],
+                'classYear': profileDict['classYear'],
                 "skills": profileDict['skills'],
                 "interests": profileDict['interests'],
                 "tindarIndex": profileDict['tindarIndex'],
@@ -198,13 +202,13 @@ def other_profile():
 ## personal profile
 @app.route('/api/userProfile', methods=["GET"])
 def profile():
-    print("\n\n\nHere is session:", session)
-    print("inside of profile")
+    # print("\n\n\nHere is session:", session)
+    # print("inside of profile")
     userID = session['userID']            
     profileDict = getterLib.getProfile(userID)
     endRefs = getterLib.getEndRefs(userID)
-    print("\n\nRetrieved Profile:\n")
-    print(profileDict)
+    # print("\n\nRetrieved Profile:\n")
+    # print(profileDict)
     histoCode = analyticsLib.getHistogram(userID)
     return jsonify({
             "user": {
@@ -213,6 +217,8 @@ def profile():
                 "major": profileDict['major'],
                 "minor": profileDict['minor'],
                 "skills": profileDict['skills'],
+                'height': profileDict['height'],
+                'classYear': profileDict['classYear'],
                 "interests": profileDict['interests'],
                 "tindarIndex": profileDict['tindarIndex'],
                 "endorsements": profileDict['endorsements'],
@@ -227,6 +233,7 @@ def profile():
 ## recruiting
 @app.route('/api/recruiting', methods=['GET', 'POST'])
 def recruiting():
+    print('current session', session)
     if request.method == 'POST':
         data = request.get_json()
         direction = data.get('choice')
@@ -260,7 +267,6 @@ def leaderboard():
         profilesDict[i] = leader
         i+=1
 
-    print(profilesDict)
     return jsonify(profilesDict)
 
 ## connections
@@ -268,8 +274,6 @@ def leaderboard():
 def connections():    
     userID = session['userID']
     connectionsDict = getterLib.getConnections(userID)
-    print(connectionsDict)
-    print("\n\nConnections Dict: ", connectionsDict)
 
     swipeMatchProfiles = {}
     refs = {}
@@ -280,27 +284,22 @@ def connections():
         refFromUserName = endorsementLib.getNameFromUserID(ref['from_user'])
         refs[refFromUserName] = getterLib.getProfile(refMatchUserID)
     ## return full profiles of connections
-    print("html string from analytics lib: ", analyticsLib.getHistogram(userID))
     connectionProfiles = {
         'selfID':userID,
         'swipeMatches':swipeMatchProfiles,
         'refs': refs
         }
     
-    print("\nconnections Profile: \n\n", connectionProfiles)
     return jsonify(connectionProfiles)
 
 @app.route('/api/messaging', methods=['POST'])
 def messaging():
     data = request.get_json()
-    print("data: ", data)
 
     self_userID = data.get('selfUserID')
     b_userID = int(data.get('bUserID'))
-    print("b_userID here:", b_userID)
     self_name = endorsementLib.getNameFromUserID(self_userID)
     b_name = endorsementLib.getNameFromUserID(b_userID)
-    print("bName:", b_name)
 
     messages = messagingLib.retrieveMessages(self_userID, b_userID)
     newMessagesList = []
@@ -327,10 +326,8 @@ def sendMessage():
     data = request.get_json()
     b_userID = data.get('bUserID')
     msg = data.get('msg')
-    print(msg)
     try:
         result = messagingLib.sendMessage(self_userID, b_userID, msg)
-        print("result: ", result)
         if result:
             return jsonify({'result' : 'successful'})
         else:
@@ -341,9 +338,7 @@ def sendMessage():
 
 @app.route('/api/endorse', methods=['POST'])
 def endorse():
-    print("entering the endorsement")
     data = request.get_json()
-    print("\nheres the data: ", data)
     to_email = data.get("email")
     if to_email == session['email']:
         print('\nattempted self endorsement\n\n')
@@ -353,7 +348,6 @@ def endorse():
     a_userID = endorsementLib.getUserIDFromEmail(a_email)
     ## if the user is out of swipes, don't let the endorsement go through
     endsRemaining = resumeLib.fetchEndorsementsRemaining(a_userID)
-    print(endsRemaining)
     if endsRemaining <= 0:
             return jsonify({'error': 'No more endorsements remaining.'}), 400
     else:
@@ -391,7 +385,6 @@ def refer():
 
 @app.route('/api/blacklist', methods=['POST'])
 def blacklist():
-    print("inside of blacklist")
     data = request.get_json()
     self_ID = session["userID"]
     email = data.get("email")

@@ -20,9 +20,9 @@ db = 'main.db'
 
 
 
-def createUser(email, classYear, sex, prefSex):
+def createUser(email, sex, prefSex):
     userID = assignUserID(resumeLib.parseName(email))
-    newApplicant = Applicant(userID, email, classYear, sex, prefSex)
+    newApplicant = Applicant(userID, email, sex, prefSex)
     algLib.addApplicantToDB(db, newApplicant)
     return userID
 

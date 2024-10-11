@@ -127,7 +127,6 @@ def fetchTindarIndex(userID):
     query = '''
     SELECT tindarIndex FROM statistics WHERE userID = ?;
     '''
-    print(userID)
     tindarIndex = cursor.execute(query, (userID,)).fetchone()[0]
     conn.commit()
     conn.close()
@@ -168,8 +167,8 @@ def writeApplicantStatistics():
     # with open(filepath, 'w') as file:
     #     file.write(header)
     statistics = getStatisticsFromDB()
-    print(header)
-    print(statistics) ## for now, I'll add functions later
+    # print(header)
+    # print(statistics) ## for now, I'll add functions later
     ## now we'd want to analyze these stats
     ## lots of ways to do it... some ideas
     ## sort database by highest to lowest offerReceptionRate

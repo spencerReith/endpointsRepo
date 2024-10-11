@@ -10,7 +10,7 @@ Spencer Reith, Summer 2024
 import libraries.resumeLib as resumeLib
 
 class Applicant:
-    def __init__(self, userID, email, classYear, sex, prefSex):
+    def __init__(self, userID, email, sex, prefSex):
         self.userID = userID
         self.name = resumeLib.parseName(email)
         self.email = email
