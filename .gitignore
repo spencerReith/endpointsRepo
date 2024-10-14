@@ -3,3 +3,4 @@ venv/
 # Ignore Python bytecode files
 __pycache__/
 *.pyc
+photosapi-438001-003e9239a438.json
