@@ -29,7 +29,8 @@ def createResumeTable(myDB):
         referrals_remaining INT,
         endorsements_remaining INT,
         swipes_remaining INT,
-        latest_swipes_update DATE
+        latest_swipes_update DATE,
+        photoID TEXT
     );
     '''
     cursor.execute(query)
@@ -40,10 +41,10 @@ def addResumeToDB(myDB, res):
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
-    INSERT INTO resume_table (userID, major, minor, height, skills, interests, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    INSERT INTO resume_table (userID, major, minor, height, skills, interests, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update, photoID)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     '''
-    cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getHeight(), res.getSkillsString(), res.getInterestsString(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update()))
+    cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getHeight(), res.getSkillsString(), res.getInterestsString(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update(), res.getPhotoID()))
     conn.commit()
     conn.close()
 

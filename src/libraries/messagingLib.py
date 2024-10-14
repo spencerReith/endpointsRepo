@@ -95,7 +95,7 @@ def sendMessage(fromUserID, toUserID, message):
     ## Remove problematic characters from message ##
     message_list = list(message)
     for i in range(len(message_list)):
-        if message_list[i] == '}' or message_list[i] == '\'' or message_list[i] == '/' or message_list[i] == '<' or message_list[i] == '>' or message_list[i] == '$' or message_list[i] == '*' or message_list[i] == ';' or message_list[i] == '=' or message_list[i] == '-':
+        if message_list[i] == '}' or message_list[i] == '`' or message_list[i] == '/' or message_list[i] == '<' or message_list[i] == '>' or message_list[i] == '$' or message_list[i] == '*' or message_list[i] == ';' or message_list[i] == '=' or message_list[i] == '-':
             message_list[i] = '_'
     message = ''.join(message_list)
             

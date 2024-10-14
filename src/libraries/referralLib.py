@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import scipy as sp
 
+import src.libraries.endorsementLib as endorsementLib
+
 
 db = 'main.db'
 
@@ -112,39 +114,50 @@ def getUserID(email):
     return result[0]
 
 def attemptReferral(self_ID, a_email, b_email):
-    a = getUserID(a_email)
-    b = getUserID(b_email)
+    print("\nPrinting self_ID:", self_ID)
+    print("\nPrinting a_email", a_email)
+    print("\nPrinting a_email.lower()", a_email.lower())
+    print("\nPrinting b_email:", b_email)
+    a = endorsementLib.getUserIDFromEmail(a_email)
+    b = endorsementLib.getUserIDFromEmail(b_email)
+    print("a_userID: ", a)
+    print("b_userID: ", b)
     if sexBasedCompatabilityCheck(db, a, b) == False:
-        # return("COMPATABILITY FAILURE")
+        print("COMPATABILITY FAILURE")
         return False
     else:
         ab_edgeWeight = getEdgeWeight(db, a, b)
         ba_edgeWeight = getEdgeWeight(db, b, a)
         if ab_edgeWeight == ba_edgeWeight == 1:
             return False
-            # return("TYPE-1 FAILURE")
+            print("TYPE-1 FAILURE")
         if ab_edgeWeight == 9 or ba_edgeWeight == 9:
             return False
-            # return("TYPE-9 FAILURE")
+            print("TYPE-9 FAILURE")
         if ab_edgeWeight == 14 or ba_edgeWeight == 14:
+            print("TYPE-14 FAILURE")
             return False
             # return("TYPE-14 FAILURE")
         if ab_edgeWeight == 0 or ba_edgeWeight == 0:
+            print("TYPE-0 FAILURE")
             return False
             # return("TYPE-0 FAILURE")
         if ab_edgeWeight == 1 and ba_edgeWeight == 'None':
+            print("1-nons uc")
             algLib.addInteractionToDB(b, a, 14)
             addReferralToDB(db, self_ID, a, b)
             decreaseReferralsRemaining(db, self_ID)
             return True
             # return("1-None Success")
         if ab_edgeWeight == 'None' and ba_edgeWeight == 1:
+            print('ere')
             algLib.addInteractionToDB(a, b, 14)
             addReferralToDB(db, self_ID, a,b)
             decreaseReferralsRemaining(db, self_ID)
             return True
             # return("None-1 Success")
         if ab_edgeWeight == ba_edgeWeight == 'None':
+            print('there')
             algLib.addInteractionToDB(a, b, 14)
             algLib.addInteractionToDB(b, a, 14)
             addReferralToDB(db, self_ID, a,b)

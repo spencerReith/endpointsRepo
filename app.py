@@ -24,6 +24,7 @@ import src.libraries.messagingLib as messagingLib
 import src.libraries.snsLib as snsLib
 import src.libraries.algLib as algLib
 import src.libraries.resumeLib as resumeLib
+import src.libraries.googleDriveLib as googleDriveLib
 
 
 from flask import Flask, render_template, request, session, redirect, jsonify
@@ -71,6 +72,17 @@ def verifyEmail2():
 def createResume():
     print("\n\nATTENTION – attempting registration\n\n")
     if request.method == "POST":
+        ###############
+        ###############
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No file part in the request'}), 409
+        
+        file = request.files['photo']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        ###############
+        ###############
+
         data = request.form.to_dict()
         email = data['email']
         password = data['password']
@@ -110,11 +122,18 @@ def createResume():
             return jsonify({'error': 'Registration error: Email Already Registered'}), 406
 
         userID = setterLib.createUser(email, sex, prefSex)
+        ######################
+        if file:
+            file.filename = str(userID)
+            filepath = os.path.join('/tmp', file.filename)
+            file.save(filepath)
+            photoID = googleDriveLib.upload_file(filepath)
+            os.remove(filepath)
+        ######################
         authenticationLib.insert_passcode(userID, email, password)
-        setterLib.createProfile(userID, major, minor, height, skills, interests)
+        setterLib.createProfile(userID, major, minor, height, skills, interests, photoID)
         analyticsLib.addTindarIndexToDB(userID, tindarIndex)
-        
-        # session = {}
+
         session['userID'] = userID
         session['email'] = email
         newDeck = getterLib.getDeck(userID, 40)
@@ -338,21 +357,26 @@ def sendMessage():
 
 @app.route('/api/endorse', methods=['POST'])
 def endorse():
+    print('Begining of endorsement.')
     data = request.get_json()
-    to_email = data.get("email")
+    to_email = data.get("email").lower()
     if to_email == session['email']:
         print('\nattempted self endorsement\n\n')
         return jsonify({'error': 'You cannot endorse yourself.'})
     msg = data.get("msg")
-    a_email = session["email"]
+    a_email = session["email"].lower()
     a_userID = endorsementLib.getUserIDFromEmail(a_email)
     ## if the user is out of swipes, don't let the endorsement go through
     endsRemaining = resumeLib.fetchEndorsementsRemaining(a_userID)
     if endsRemaining <= 0:
+            print('no more endorsements remaining')
             return jsonify({'error': 'No more endorsements remaining.'}), 400
     else:
         try:
+            print('trying')
+            print('a, b, msg', a_userID, to_email, msg)
             if endorsementLib.attemptEndorsement(a_userID, to_email, msg) == True:
+                print('sucessful')
                 return jsonify({'result': 'sucess'}), 200
             else:
                 return jsonify({'error': 'Error. these users have already matched, or you included profanity in your endorsement.'})
@@ -362,11 +386,12 @@ def endorse():
 @app.route('/api/refer', methods=['POST'])
 def refer():
     data = request.get_json()
-    self_ID = endorsementLib.getUserIDFromEmail(session["email"])
-    email1 = data.get("email1")
-    email2 = data.get("email2")
+    self_ID = endorsementLib.getUserIDFromEmail(session["email"].lower())
+    email1 = data.get("email1").lower()
+    email2 = data.get("email2").lower()
+    print('emails: ', email1, email2)
 
-    if email1 == session['email'] or email2 == session['email']:
+    if email1 == session['email'].lower() or email2 == session['email'].lower():
         print('\nattempted self referrel\n\n')
         return jsonify({'error': 'You cannot refer yourself.'})
 
@@ -375,6 +400,7 @@ def refer():
         return jsonify({'error': 'Error: You are out of endorsements'})
     
     try:
+        print('trying')
         result = referralLib.attemptReferral(self_ID, email1, email2)
         if result == True:
             return jsonify({'result': 'Success! These users have been referred'})
@@ -387,19 +413,20 @@ def refer():
 def blacklist():
     data = request.get_json()
     self_ID = session["userID"]
-    email = data.get("email")
+    email = data.get("email").lower()
     b_userID = endorsementLib.getUserIDFromEmail(email)
 
     if b_userID == False:
         return jsonify({'error' : 'User does not exist'})
 
-    if email == session['email']:
+    if email == session['email'].lower():
         print('\nattempted self blacklist\n\n')
         return jsonify({'error': 'You cannot blacklist yourself.'})
     
     ## insert interaction with blacklist code
     try:
         algLib.addInteractionToDB(self_ID, b_userID, 9)
+        cencorshipLib.remove_endorsements(self_ID, b_userID)
         return jsonify({'result' : 'successful blacklist'})
     except:
         return jsonify({'error': 'Error in blacklisting.'})

@@ -64,7 +64,8 @@ def remove_from_applicantPool(myDB, userID):
     conn.commit()
     conn.close()
 
-def remove_endorsements(myDB, a_userID, b_userID):
+def remove_endorsements(a_userID, b_userID):
+    myDB = 'main.db'
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''

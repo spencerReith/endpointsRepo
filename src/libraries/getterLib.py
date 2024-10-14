@@ -49,6 +49,7 @@ def getProfile(userID):
     major = res_df['major'].to_list()
     minor = res_df['minor'].to_list()
     height = res_df['height'].to_list()
+    photoID = res_df['photoID'].to_list()
     skills = res_df['skills'].to_list()
     interests = res_df['interests'].to_list()
     tindarIndex = stats_df['tindarIndex'].to_list()
@@ -62,6 +63,7 @@ def getProfile(userID):
         'major' : major,
         'minor' : minor,
         'height' : height,
+        'photoID' : photoID,
         'skills' : skills,
         'interests' : interests,
         'tindarIndex' : tindarIndex,

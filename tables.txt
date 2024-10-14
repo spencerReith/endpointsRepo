@@ -1,0 +1,76 @@
+CREATE TABLE IF NOT EXISTS applicant_pool (
+        key INTEGER PRIMARY KEY,
+        userID INTEGER,
+        name TEXT,
+        email TEXT,
+        classYear INTEGER,
+        sex CHAR(1),
+        prefSex CHAR(1)
+    );
+
+
+CREATE TABLE IF NOT EXISTS interactions_table (
+        a_userID INTEGER,
+        b_userID INTEGER,
+        weight INTEGER,
+        UNIQUE(a_userID, b_userID)
+    );
+
+CREATE TABLE IF NOT EXISTS statistics (
+        userID INTEGER PRIMARY KEY,
+        offerReceptionRate FLOAT,
+        offerBestowalRate FLOAT,
+        tindarIndex FLOAT
+    );
+
+CREATE TABLE IF NOT EXISTS authorization_table (
+        userID INTEGER PRIMARY KEY,
+        email STRING,
+        hashedKey STRING
+    );
+
+CREATE TABLE IF NOT EXISTS endorsements_table (
+        a_userID INTEGER,
+        b_userID INTEGER,
+        message TEXT
+    );
+
+CREATE TABLE IF NOT EXISTS messages_table (
+        a_userID INTEGER,
+        b_userID INTEGER,
+        messageString STRING,
+        UNIQUE(a_userID, b_userID),
+        CHECK (a_userID < b_userID)
+    );
+
+CREATE TABLE IF NOT EXISTS referrals_table (
+        self_ID INTEGER,
+        a_userID INTEGER,
+        b_userID INTEGER,
+        UNIQUE(a_userID, b_userID)
+    );
+
+CREATE TABLE IF NOT EXISTS resume_table (
+        userID INTEGER PRIMARY KEY,
+        major TEXT,
+        minor TEXT,
+        height TEXT,
+        skills TEXT,
+        interests TEXT,
+        referrals_remaining INT,
+        endorsements_remaining INT,
+        swipes_remaining INT,
+        latest_swipes_update DATE,
+        photoID TEXT
+    );
+
+---------------------------
+
+DROP TABLE IF EXISTS applicant_pool;
+DROP TABLE IF EXISTS interactions_table;
+DROP TABLE IF EXISTS statistics;
+DROP TABLE IF EXISTS authorization_table;
+DROP TABLE IF EXISTS endorsements_table;
+DROP TABLE IF EXISTS messages_table;
+DROP TABLE IF EXISTS referrals_table;
+DROP TABLE IF EXISTS resume_table;

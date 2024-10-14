@@ -33,14 +33,16 @@ def createEndorsementsTable(myDB):
     conn.commit()
     conn.close()
 
-def getUserIDFromEmail(email):
+def getUserIDFromEmail(given_email):
+    print("email: ", given_email)
     myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
-    SELECT userID FROM applicant_pool WHERE email = ?;
+    SELECT userID FROM applicant_pool WHERE LOWER(email) = ?;
     '''
-    result = cursor.execute(query, (email,)).fetchone()
+    result = cursor.execute(query, (given_email,)).fetchone()
+    print('result as here: ', result)
     conn.commit()
     if result == None:
         conn.close()
@@ -92,17 +94,22 @@ def addEndorsementToDB(myDB, a_userID, b_userID, message):
     cursor.execute(query, (a_userID, b_userID, message))
     conn.commit()
     conn.close()
+    print('succ conc')
 
 def attemptEndorsement(a_userID, b_email, message):
     if cencorshipLib.contains_prof(message):
         print("MESSAGE CENSORED: ", message)
         return False
     b_userID = getUserIDFromEmail(b_email.lower())
+    print(b_email.lower())
+    print('b_userID = ', b_userID)
     if b_userID == False:
         return False
     if onBlacklist(db, a_userID, b_userID):
+        print('obl')
         return False
     if onBlacklist(db, b_userID, a_userID):
+        print('obl3')
         return False
     addEndorsementToDB(db, a_userID, b_userID, message)
     decreaseEndorsementsRemaining(db, a_userID)
