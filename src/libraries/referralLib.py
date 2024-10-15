@@ -17,8 +17,8 @@ import scipy as sp
 
 import src.libraries.endorsementLib as endorsementLib
 
-
-db = 'main.db'
+# from app import db
+# db = 'main.db'
 
 
 ########################################################
@@ -103,6 +103,7 @@ def addReferralToDB(myDB, self_ID, a, b):
     conn.close()
 
 def getUserID(email):
+    from app import db
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''

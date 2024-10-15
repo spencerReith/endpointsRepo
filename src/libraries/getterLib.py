@@ -20,10 +20,12 @@ from libraries import endorsementLib
 import pandas as pd
 
 
-
-db = 'main.db'
+# from app import db
+# db = 'main.db'
 
 def getDeck(userID, cap):
+    from app import db
+
     selfID_Graph = algLib.buildSelfID_GraphFromDB(db, userID)
     ## get queue of userID's to swipe through
     userID_Queue = algorithm.getCompositeQueue(selfID_Graph, userID, cap)
@@ -74,6 +76,8 @@ def getProfile(userID):
 
 
 def getResumeDF(userID):
+    from app import db
+
     conn = sqlite3.connect(db)
     query = "SELECT * FROM resume_table WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
@@ -81,6 +85,8 @@ def getResumeDF(userID):
     return df
 
 def getApplicantDF(userID):
+    from app import db
+
     conn = sqlite3.connect(db)
     query = "SELECT * FROM applicant_pool WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
@@ -88,6 +94,8 @@ def getApplicantDF(userID):
     return df
 
 def getStatisticsDF(userID):
+    from app import db
+
     conn = sqlite3.connect(db)
     query = "SELECT * FROM statistics WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
@@ -96,6 +104,8 @@ def getStatisticsDF(userID):
 
 
 def getEndRefs(userID):
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
@@ -116,6 +126,8 @@ def getEndRefs(userID):
     return endRefs
 
 def getLeaderboard():
+    from app import db
+
     ## create dataframe of b_userID's from endorsement_table
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
@@ -131,6 +143,8 @@ def getLeaderboard():
     return leaderboardDict
 
 def getConnections(userID):
+    from app import db
+
     swipingMatches = []
     # referrals = []
     conn = sqlite3.connect(db)

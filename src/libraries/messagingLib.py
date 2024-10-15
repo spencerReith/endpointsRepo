@@ -1,11 +1,13 @@
 import sqlite3
 import src.libraries.authenticationLib as authenticationLib
 
-
-db = 'main.db'
+# from app import db
+# db = 'main.db'
 
 
 def createMessagesTable():
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
@@ -33,6 +35,8 @@ def parseMessage(messageString):
     return mTupleList
 
 def retrieveRawMessageString(user1_ID, user2_ID):
+    from app import db
+
     ## ensure lower userID will be marked as 'a_userID' in DB
     if user1_ID < user2_ID:
         userA_ID = user1_ID
@@ -64,6 +68,8 @@ def retrieveMessages(self_userID, other_userID):
         return mTupleList
 
 def concatonateMessage(user1_ID, user2_ID, concatString):
+    from app import db
+
     ## ensure lower userID will be marked as 'a_userID' in DB
     if user1_ID < user2_ID:
         userA_ID = user1_ID

@@ -15,7 +15,7 @@ from src.libraries import getterLib
 from src.classes.applicant import Applicant
 from src.classes.resume import Resume
 
-db = 'main.db'
+# db = 'main.db'
 
 
 
@@ -27,6 +27,7 @@ def createUser(email, sex, prefSex):
     return userID
 
 def createProfile(userID, major, minor, height, skills, interests, photoID):
+    from app import db
     newResume = Resume(userID, major, minor, height, skills, interests, photoID)
     resumeLib.addResumeToDB(db, newResume)
 

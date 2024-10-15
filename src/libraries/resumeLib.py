@@ -13,7 +13,8 @@ import sqlite3
 from classes.resume import Resume
 from datetime import date
 
-db = 'main.db'
+# from app import db
+# db = 'main.db'
 
 def createResumeTable(myDB):
     conn = sqlite3.connect(myDB)
@@ -68,6 +69,7 @@ def parseClassYear(email):
     return year
 
 def fetchLatestSwipesUpdate(userID):
+    from app import db
     myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
@@ -85,6 +87,7 @@ def fetchLatestSwipesUpdate(userID):
     return latestUpdate
 
 def resetSwipes(userID, currentDate):
+    from app import db
     myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
@@ -96,6 +99,7 @@ def resetSwipes(userID, currentDate):
     conn.close()
 
 def decrementSwipes(userID):
+    from app import db
     curSwipes = fetchSwipesRemaining(userID)
     newSwipes = curSwipes - 1
 
@@ -111,6 +115,7 @@ def decrementSwipes(userID):
 
 
 def fetchSwipesRemaining(userID):
+    from app import db
     myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
@@ -128,6 +133,7 @@ def fetchSwipesRemaining(userID):
     return swipesRemaining
 
 def fetchEndorsementsRemaining(userID):
+    from app import db
     myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
@@ -145,6 +151,7 @@ def fetchEndorsementsRemaining(userID):
     return endorsementsRemaining
 
 def fetchReferralsRemaining(userID):
+    from app import db
     myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()

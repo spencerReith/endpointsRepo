@@ -1,11 +1,14 @@
+import psycopg2
 import sqlite3
 import hashlib
 
-
-db = 'main.db'
+# from app import db
+# db = 'main.db'
 
 
 def createAuthorizationTable():
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
@@ -20,6 +23,8 @@ def createAuthorizationTable():
     conn.close()
 
 def insert_passcode(userID, email, password):
+    from app import db
+
     hashed_key = hash_with_sha256(password)
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
@@ -31,29 +36,38 @@ def insert_passcode(userID, email, password):
     conn.close()
 
 def pullHash(email):
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
-    SELECT hashedKey FROM authorization_table WHERE email = ?;
+    SELECT hashedKey FROM authorization_table WHERE email = %s;
     '''
     hash = cursor.execute(query, (email,)).fetchone()[0]
     conn.close()
     return hash
 
 def emailInDB(email):
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT 1 FROM authorization_table WHERE email = ?;
+    SELECT 1 FROM authorization_table WHERE email = %s;
     '''
-    result = cursor.execute(query, (email,)).fetchall()
-    conn.close()
-    if result:
+    cursor.execute(query, (email,))
+    
+    if cursor.fetchall():
+        result = cursor.fetchall()
+        conn.close()
         return True
     else:
+        conn.close()
         return False
 
 def pullUserID(email):
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''

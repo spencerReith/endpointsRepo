@@ -6,6 +6,8 @@ import sys
 import json
 import roman
 from datetime import date
+from flask_sqlalchemy import SQLAlchemy
+import psycopg2
 
 
 dirname = os.path.dirname(__file__)
@@ -30,17 +32,23 @@ import src.libraries.googleDriveLib as googleDriveLib
 from flask import Flask, render_template, request, session, redirect, jsonify
 # from flask_session import Session
 from flask_cors import CORS
+# from db import db
 
-
+##########
 app = Flask(__name__)
 app.secret_key = 'inspector'
 app.config.update(
     SESSION_COOKIE_SAMESITE='None',
     SESSION_COOKIE_SECURE=True,
 )
-
+###########
+DATABASE_URL = 'postgres://uenjmmbebllolo:pe3ec20e2633908367b0d8e83665f0f392cb1d17ae8d18d781a6462a3abbe37ce@c9mq4861d16jlm.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/df2upfom9smjvg'
+# app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+# Initialize the SQLAlchemy instance
+# db = SQLAlchemy()
+###########
 CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API endpoints
-
+###########
 
 ## home
 @app.route('/', methods=["GET"])

@@ -20,7 +20,9 @@ from libraries import cencorshipLib
 ### FUNCTIONS FOR DATABASE QUERERING & GRAPH CONSTRUCTION + VISUALIZATION
 ########################################################
 
-db = 'main.db'
+# db = 'main.db'
+# from app import db
+
 
 def getNodesFromDB(myDB):
     conn = sqlite3.connect(myDB)
@@ -131,6 +133,8 @@ def addApplicantToDB(myDB, a):
     conn.close()
 
 def addInteractionToDB(a_userID, b_userID, weight):
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
@@ -164,6 +168,8 @@ def renegInDatabase(a_userID, b_userID):
 
 
 def blacklist(from_userID, to_userID):
+    from app import db
+
     addInteractionToDB(db, from_userID, to_userID, 9)
     ## in case of blacklist, remove all previous endorsements the users have made of eachother
     cencorshipLib.remove_endorsements(db, from_userID, to_userID)

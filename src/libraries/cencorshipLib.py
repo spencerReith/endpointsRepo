@@ -9,6 +9,7 @@ sys.path.append(parent_dir)
 from better_profanity import profanity
 import sqlite3
 import pandas as pd
+# from app import db
 
 bannedNamesPath = 'testingOutput/bannedNames.csv'
 
@@ -65,7 +66,9 @@ def remove_from_applicantPool(myDB, userID):
     conn.close()
 
 def remove_endorsements(a_userID, b_userID):
-    myDB = 'main.db'
+    from app import db
+
+    myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''

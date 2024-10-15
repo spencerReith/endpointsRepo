@@ -17,7 +17,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import percentileofscore
 
-db = 'main.db'
+# db = 'main.db'
+# from app import db
 
 def getStatisticsFromDB(myDB):
     # Connect to the SQLite database
@@ -110,6 +111,8 @@ def calcTindarIndex(GPA, ricePurityScore):
     return tindarIndex
 
 def addTindarIndexToDB(userID, tindarIndex):
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
@@ -122,6 +125,8 @@ def addTindarIndexToDB(userID, tindarIndex):
 
 ## no long needed
 def fetchTindarIndex(userID):
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
@@ -190,7 +195,9 @@ def getTindarIndexDF(myDB):
 
 
 def getHistogram(userID):
-    myDB = db  # Assuming db is already defined
+    from app import db
+
+    myDB = db
     numberOfBins = 20
     df = getTindarIndexDF(myDB)
     

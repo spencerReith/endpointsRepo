@@ -15,8 +15,8 @@ import sqlite3
 from libraries import cencorshipLib
 from libraries import getterLib
 
-
-db = 'main.db'
+# from app import db
+# db = 'main.db'
 
 
 def createEndorsementsTable(myDB):
@@ -34,6 +34,8 @@ def createEndorsementsTable(myDB):
     conn.close()
 
 def getUserIDFromEmail(given_email):
+    from app import db
+
     print("email: ", given_email)
     myDB = db
     conn = sqlite3.connect(myDB)
@@ -53,6 +55,8 @@ def getUserIDFromEmail(given_email):
     return userID
 
 def getNameFromUserID(userID):
+    from app import db
+
     myDB = db
     conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
@@ -97,6 +101,8 @@ def addEndorsementToDB(myDB, a_userID, b_userID, message):
     print('succ conc')
 
 def attemptEndorsement(a_userID, b_email, message):
+    from app import db
+
     if cencorshipLib.contains_prof(message):
         print("MESSAGE CENSORED: ", message)
         return False
@@ -126,6 +132,8 @@ def decreaseEndorsementsRemaining(myDB, userID):
     conn.close()
 
 def fetchEndorsements(userID):
+    from app import db
+
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     query = '''
