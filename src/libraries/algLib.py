@@ -2,6 +2,7 @@
 ## Spencer Reith, Summer 2024
 import os
 import sys
+import psycopg2
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -20,12 +21,11 @@ from libraries import cencorshipLib
 ### FUNCTIONS FOR DATABASE QUERERING & GRAPH CONSTRUCTION + VISUALIZATION
 ########################################################
 
-# db = 'main.db'
-# from app import db
-
 
 def getNodesFromDB(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM applicant_pool;')
     rows = cursor.fetchall()
@@ -38,7 +38,9 @@ def getNodesFromDB(myDB):
     return nodes
 
 def getEdgesFromDB(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM interactions_table;')
     rows = cursor.fetchall()
@@ -88,7 +90,9 @@ def buildWholeGraphFromDB(myDB):
 ########################################################
 
 def createApplicantTable(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS applicant_pool (
@@ -106,8 +110,9 @@ def createApplicantTable(myDB):
     conn.close()
 
 def createEdgeTable(myDB):
-    ## assumes that the interaction is going FROM user A TO user B.
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS interactions_table (
@@ -122,24 +127,26 @@ def createEdgeTable(myDB):
     conn.close()
 
 def addApplicantToDB(myDB, a):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     INSERT INTO applicant_pool (key, userID, name, email, classYear, sex, prefSex)
-    VALUES (?, ?, ?, ?, ?, ?, ?);
+    VALUES (%s, %s, %s, %s, %s, %s, %s);
     '''
     cursor.execute(query, (a.getUserId(), a.getUserId(), a.getName(), a.getEmail(), a.getClassYear(), a.getSex(), a.getPrefSex()))
     conn.commit()
     conn.close()
 
 def addInteractionToDB(a_userID, b_userID, weight):
-    from app import db
+    from app import DATABASE_URL
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     INSERT OR REPLACE INTO interactions_table (a_userID, b_userID, weight)
-    VALUES (?, ?, ?);
+    VALUES (%s, %s, %s);
     '''
     cursor.execute(query, (a_userID, b_userID, weight))
     conn.commit()
@@ -168,8 +175,6 @@ def renegInDatabase(a_userID, b_userID):
 
 
 def blacklist(from_userID, to_userID):
-    from app import db
-
     addInteractionToDB(db, from_userID, to_userID, 9)
     ## in case of blacklist, remove all previous endorsements the users have made of eachother
     cencorshipLib.remove_endorsements(db, from_userID, to_userID)

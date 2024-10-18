@@ -3,6 +3,7 @@
 ## CREATE ENDORSEMENT TABLE
 ## a_userID SENDS the endorsement
 ## b_userID RECIEVES the endorsement
+import psycopg2
 import os
 import sys
 
@@ -20,7 +21,9 @@ from libraries import getterLib
 
 
 def createEndorsementsTable(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS endorsements_table (
@@ -34,17 +37,14 @@ def createEndorsementsTable(myDB):
     conn.close()
 
 def getUserIDFromEmail(given_email):
-    from app import db
-
-    print("email: ", given_email)
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT userID FROM applicant_pool WHERE LOWER(email) = ?;
     '''
     result = cursor.execute(query, (given_email,)).fetchone()
-    print('result as here: ', result)
     conn.commit()
     if result == None:
         conn.close()
@@ -55,13 +55,12 @@ def getUserIDFromEmail(given_email):
     return userID
 
 def getNameFromUserID(userID):
-    from app import db
-
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT name FROM applicant_pool WHERE userID = ?;
+    SELECT name FROM applicant_pool WHERE userID = %s;
     '''
     result = cursor.execute(query, (userID,)).fetchone()
     conn.commit()
@@ -74,11 +73,14 @@ def getNameFromUserID(userID):
     return name
 
 def onBlacklist(myDB, list_manager, blacklistee):
+    from app import DATABASE_URL
+
     weight = 9 ## code for blacklist
-    conn = sqlite3.connect(myDB)
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT * FROM interactions_table WHERE a_userID=? AND b_userID=? AND weight=?;
+    SELECT * FROM interactions_table WHERE a_userID=%s AND b_userID=%s AND weight=%s;
     '''
     result = cursor.execute(query, (list_manager, blacklistee, weight)).fetchone()
     if result == None:
@@ -89,11 +91,13 @@ def onBlacklist(myDB, list_manager, blacklistee):
         return True
 
 def addEndorsementToDB(myDB, a_userID, b_userID, message):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     INSERT INTO endorsements_table (a_userID, b_userID, message)
-    VALUES (?, ?, ?);
+    VALUES (%s, %s, %s);
     '''
     cursor.execute(query, (a_userID, b_userID, message))
     conn.commit()
@@ -101,8 +105,6 @@ def addEndorsementToDB(myDB, a_userID, b_userID, message):
     print('succ conc')
 
 def attemptEndorsement(a_userID, b_email, message):
-    from app import db
-
     if cencorshipLib.contains_prof(message):
         print("MESSAGE CENSORED: ", message)
         return False
@@ -122,22 +124,24 @@ def attemptEndorsement(a_userID, b_email, message):
     return True
 
 def decreaseEndorsementsRemaining(myDB, userID):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    UPDATE resume_table SET endorsements_remaining = endorsements_remaining - 1 WHERE userID = ?
+    UPDATE resume_table SET endorsements_remaining = endorsements_remaining - 1 WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     conn.commit()
     conn.close()
 
 def fetchEndorsements(userID):
-    from app import db
-
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT a_userID, message FROM endorsements_table WHERE b_userID = ?;
+    SELECT a_userID, message FROM endorsements_table WHERE b_userID = %s;
     '''
     result = cursor.execute(query, (userID,)).fetchall()
     if result == None:

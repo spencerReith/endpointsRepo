@@ -1,3 +1,4 @@
+import psycopg2
 import sqlite3
 import src.libraries.authenticationLib as authenticationLib
 
@@ -6,9 +7,9 @@ import src.libraries.authenticationLib as authenticationLib
 
 
 def createMessagesTable():
-    from app import db
-
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS messages_table (
@@ -35,8 +36,8 @@ def parseMessage(messageString):
     return mTupleList
 
 def retrieveRawMessageString(user1_ID, user2_ID):
-    from app import db
-
+    from app import DATABASE_URL
+    
     ## ensure lower userID will be marked as 'a_userID' in DB
     if user1_ID < user2_ID:
         userA_ID = user1_ID
@@ -45,10 +46,10 @@ def retrieveRawMessageString(user1_ID, user2_ID):
         userA_ID = user2_ID
         userB_ID = user1_ID
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT messageString FROM messages_table WHERE a_userID = ? AND b_userID = ?
+    SELECT messageString FROM messages_table WHERE a_userID = %s AND b_userID = %s
     '''
     result = cursor.execute(query, (userA_ID, userB_ID)).fetchone()
     conn.commit()
@@ -68,8 +69,8 @@ def retrieveMessages(self_userID, other_userID):
         return mTupleList
 
 def concatonateMessage(user1_ID, user2_ID, concatString):
-    from app import db
-
+    from app import DATABASE_URL
+    
     ## ensure lower userID will be marked as 'a_userID' in DB
     if user1_ID < user2_ID:
         userA_ID = user1_ID
@@ -78,7 +79,7 @@ def concatonateMessage(user1_ID, user2_ID, concatString):
         userA_ID = user2_ID
         userB_ID = user1_ID
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     ## either concatonate onto message string, or add a new row to the table for the new conversation
     query = '''

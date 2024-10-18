@@ -1,3 +1,4 @@
+import psycopg2
 import os
 import sys
 
@@ -33,17 +34,19 @@ def contains_prof(message):
         return True
     
 def remove_from_applicantPool(myDB, userID):
+    from app import DATABASE_URL
+    
     ## fetch their email to ban them for future
-    conn = sqlite3.connect(myDB)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT email FROM applicant_pool WHERE userID = ?
+    SELECT email FROM applicant_pool WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     email = cursor.fetchone()
     ## remove them from the applicant pool
     query = '''
-    DELETE FROM applicant_pool WHERE userID = ?
+    DELETE FROM applicant_pool WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     conn.commit()
@@ -66,17 +69,16 @@ def remove_from_applicantPool(myDB, userID):
     conn.close()
 
 def remove_endorsements(a_userID, b_userID):
-    from app import db
-
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    DELETE FROM endorsements_table WHERE a_userID = ? AND b_userID = ?
+    DELETE FROM endorsements_table WHERE a_userID = %s AND b_userID = %s
     '''
     cursor.execute(query, (a_userID, b_userID))
     query = '''
-    DELETE FROM endorsements_table WHERE a_userID = ? AND b_userID = ?
+    DELETE FROM endorsements_table WHERE a_userID = %s AND b_userID = %s
     '''
     cursor.execute(query, (b_userID, a_userID))
     conn.commit()

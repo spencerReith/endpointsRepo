@@ -7,9 +7,9 @@ import hashlib
 
 
 def createAuthorizationTable():
-    from app import db
+    from app import DATABASE_URL
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS authorization_table (
@@ -36,9 +36,9 @@ def insert_passcode(userID, email, password):
     conn.close()
 
 def pullHash(email):
-    from app import db
+    from app import DATABASE_URL
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT hashedKey FROM authorization_table WHERE email = %s;
@@ -56,9 +56,7 @@ def emailInDB(email):
     SELECT 1 FROM authorization_table WHERE email = %s;
     '''
     cursor.execute(query, (email,))
-    
     if cursor.fetchall():
-        result = cursor.fetchall()
         conn.close()
         return True
     else:
@@ -66,12 +64,12 @@ def emailInDB(email):
         return False
 
 def pullUserID(email):
-    from app import db
+    from app import DATABASE_URL
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT userID FROM authorization_table WHERE email = ?;
+    SELECT userID FROM authorization_table WHERE email = %s;
     '''
     userID = cursor.execute(query, (email,)).fetchone()[0]
     conn.close()

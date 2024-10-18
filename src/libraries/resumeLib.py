@@ -1,4 +1,5 @@
 # Library for resume related functions
+import psycopg2
 import os
 import sys
 import re
@@ -17,7 +18,9 @@ from datetime import date
 # db = 'main.db'
 
 def createResumeTable(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS resume_table (
@@ -39,11 +42,13 @@ def createResumeTable(myDB):
     conn.close()
 
 def addResumeToDB(myDB, res):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     INSERT INTO resume_table (userID, major, minor, height, skills, interests, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update, photoID)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     '''
     cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getHeight(), res.getSkillsString(), res.getInterestsString(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update(), res.getPhotoID()))
     conn.commit()
@@ -69,14 +74,14 @@ def parseClassYear(email):
     return year
 
 def fetchLatestSwipesUpdate(userID):
-    from app import db
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT latest_swipes_update
     FROM resume_table
-    WHERE userID = ?
+    WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     results = cursor.fetchall()
@@ -87,27 +92,27 @@ def fetchLatestSwipesUpdate(userID):
     return latestUpdate
 
 def resetSwipes(userID, currentDate):
-    from app import db
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    UPDATE resume_table SET swipes_remaining = 40, latest_swipes_update = ? WHERE userID = ?
+    UPDATE resume_table SET swipes_remaining = 40, latest_swipes_update = %s WHERE userID = %s
     '''
     cursor.execute(query, (currentDate, userID))
     conn.commit()
     conn.close()
 
 def decrementSwipes(userID):
-    from app import db
+    from app import DATABASE_URL
+        
     curSwipes = fetchSwipesRemaining(userID)
     newSwipes = curSwipes - 1
-
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    UPDATE resume_table SET swipes_remaining = ? WHERE userID = ?
+    UPDATE resume_table SET swipes_remaining = %s WHERE userID = %s
     '''
     cursor.execute(query, (newSwipes, userID))
     conn.commit()
@@ -115,14 +120,14 @@ def decrementSwipes(userID):
 
 
 def fetchSwipesRemaining(userID):
-    from app import db
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT swipes_remaining
     FROM resume_table
-    WHERE userID = ?
+    WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     results = cursor.fetchall()
@@ -133,14 +138,14 @@ def fetchSwipesRemaining(userID):
     return swipesRemaining
 
 def fetchEndorsementsRemaining(userID):
-    from app import db
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT endorsements_remaining
     FROM resume_table
-    WHERE userID = ?
+    WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     results = cursor.fetchall()
@@ -151,14 +156,14 @@ def fetchEndorsementsRemaining(userID):
     return endorsementsRemaining
 
 def fetchReferralsRemaining(userID):
-    from app import db
-    myDB = db
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT referrals_remaining
     FROM resume_table
-    WHERE userID = ?
+    WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     results = cursor.fetchall()

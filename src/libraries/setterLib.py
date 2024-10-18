@@ -23,7 +23,7 @@ from src.classes.resume import Resume
 def createUser(email, sex, prefSex):
     userID = assignUserID(resumeLib.parseName(email))
     newApplicant = Applicant(userID, email, sex, prefSex)
-    algLib.addApplicantToDB(db, newApplicant)
+    algLib.addApplicantToDB(newApplicant)
     return userID
 
 def createProfile(userID, major, minor, height, skills, interests, photoID):

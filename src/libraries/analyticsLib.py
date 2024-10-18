@@ -3,6 +3,7 @@ import os
 import sys
 import mpld3
 import numpy as np
+import psycopg2
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -21,30 +22,28 @@ from scipy.stats import percentileofscore
 # from app import db
 
 def getStatisticsFromDB(myDB):
-    # Connect to the SQLite database
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
-    # Fetch data from the table
     cursor.execute('SELECT * FROM statistics;')
     rows = cursor.fetchall()
-    # Create a dictionary to store the fetched data
     statistics = {}
-    # store in dictionary as {userID:(stat1, stat2, stat3)}
     for row in rows:
         key = int(row[0])
         statistics[key] = [row[1], row[2], row[3]]
-    # Close the connection
     conn.close()
-    return statistics # return nodes
+    return statistics
 
 
 ########################################################
 ### FUNCTIONS FOR GRAPH ANALYSIS #######################
 ########################################################
 
-## Run createApplicantTable
 def createStatisticsTable(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS statistics (
@@ -111,9 +110,9 @@ def calcTindarIndex(GPA, ricePurityScore):
     return tindarIndex
 
 def addTindarIndexToDB(userID, tindarIndex):
-    from app import db
+    from app import DATABASE_URL
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     INSERT INTO statistics (userID, tindarIndex)
@@ -125,9 +124,9 @@ def addTindarIndexToDB(userID, tindarIndex):
 
 ## no long needed
 def fetchTindarIndex(userID):
-    from app import db
+    from app import DATABASE_URL
 
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT tindarIndex FROM statistics WHERE userID = ?;
@@ -143,10 +142,13 @@ def fetchTindarIndex(userID):
 
 ## Run calcApplicantStatistics
 def calcApplicantStatistics(myDB, G, selfID):
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
+    
     offerReceptionRate = calcOfferReceptionRate(G, selfID)
     offerBestowalRate = calcOfferBestowalRate(G, selfID)
     ## insert data into table
-    conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
     UPDATE statistics SET offerReceptionRate = ?, offerBestowalRate = ? WHERE userID = ?
@@ -184,7 +186,9 @@ def writeApplicantStatistics():
     ## offerReceptionRate versus offerBestowalRate
 
 def getTindarIndexDF(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT userID, tindarIndex FROM statistics
@@ -195,8 +199,6 @@ def getTindarIndexDF(myDB):
 
 
 def getHistogram(userID):
-    from app import db
-
     myDB = db
     numberOfBins = 20
     df = getTindarIndexDF(myDB)

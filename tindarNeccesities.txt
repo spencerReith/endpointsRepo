@@ -1,0 +1,4 @@
+heroku login
+heroku pg:psql -a tindar-backend
+\q
+\dt

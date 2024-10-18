@@ -1,5 +1,6 @@
 ## REFERRAL LIB
 ## defines important things for referals
+import psycopg2
 import os
 import sys
 
@@ -27,7 +28,9 @@ import src.libraries.endorsementLib as endorsementLib
 
 ## Run createReferralsTable
 def createReferralsTable(myDB):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS referrals_table (
@@ -43,10 +46,12 @@ def createReferralsTable(myDB):
 
 
 def getApplicantFromDB(myDB, userID):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT * FROM applicant_pool WHERE userID = ?;
+    SELECT * FROM applicant_pool WHERE userID = %s;
     '''
     row = cursor.execute(query, (userID,)).fetchone()
     a = Applicant(row[1], row[3], row[4], row[5], row[6])
@@ -75,10 +80,12 @@ def sexBasedCompatabilityCheck(myDB, a_userID, b_userID):
     return False
 
 def getEdgeWeight(myDB, a, b):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT * FROM interactions_table WHERE a_userID = ? AND b_userID = ?;
+    SELECT * FROM interactions_table WHERE a_userID = %s AND b_userID = %s;
     '''
     result = cursor.execute(query, (a, b)).fetchone()
     ## If edge does not exist, return 'DNE'
@@ -92,22 +99,24 @@ def getEdgeWeight(myDB, a, b):
     return edge_weight
 
 def addReferralToDB(myDB, self_ID, a, b):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     INSERT INTO referrals_table (self_ID, a_userID, b_userID)
-    VALUES (?, ?, ?);
+    VALUES (%s, %s, %s);
     '''
     cursor.execute(query, (self_ID, a, b))
     conn.commit()
     conn.close()
 
 def getUserID(email):
-    from app import db
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    SELECT userID FROM applicant_pool WHERE email = ?;
+    SELECT userID FROM applicant_pool WHERE email = %s;
     '''
     result = cursor.execute(query, (email,)).fetchone()
     conn.close()
@@ -168,22 +177,25 @@ def attemptReferral(self_ID, a_email, b_email):
 
     
 def decreaseReferralsRemaining(myDB, userID):
-    conn = sqlite3.connect(myDB)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
-    UPDATE resume_table SET referrals_remaining = referrals_remaining - 1 WHERE userID = ?
+    UPDATE resume_table SET referrals_remaining = referrals_remaining - 1 WHERE userID = %s
     '''
     cursor.execute(query, (userID,))
     conn.commit()
     conn.close()
 
 def getReferralInfo(myDB, referredUser):
-    # list of tuples in order (from_user other_user)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     refsList = []
-    conn = sqlite3.connect(myDB)
     cursor = conn.cursor()
     query = '''
-    SELECT * FROM referrals_table WHERE a_userID = ? OR b_userID = ?
+    SELECT * FROM referrals_table WHERE a_userID = %s OR b_userID = %s
     '''
     cursor.execute(query, (referredUser, referredUser))
     rows = cursor.fetchall()

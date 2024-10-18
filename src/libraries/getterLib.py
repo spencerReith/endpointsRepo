@@ -2,7 +2,7 @@
 'getterLib.py' – contains the functions needed to display data on the front-end
 Spencer Reith – 24X
 """
-
+import psycopg2
 import os
 import sys
 
@@ -76,27 +76,27 @@ def getProfile(userID):
 
 
 def getResumeDF(userID):
-    from app import db
-
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     query = "SELECT * FROM resume_table WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
     conn.close()
     return df
 
 def getApplicantDF(userID):
-    from app import db
-
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     query = "SELECT * FROM applicant_pool WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
     conn.close()
     return df
 
 def getStatisticsDF(userID):
-    from app import db
-
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     query = "SELECT * FROM statistics WHERE userID = ?"
     df = pd.read_sql_query(query, conn, params=(userID,))
     conn.close()
@@ -104,9 +104,9 @@ def getStatisticsDF(userID):
 
 
 def getEndRefs(userID):
-    from app import db
-
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT endorsements_remaining, referrals_remaining
@@ -126,10 +126,9 @@ def getEndRefs(userID):
     return endRefs
 
 def getLeaderboard():
-    from app import db
-
-    ## create dataframe of b_userID's from endorsement_table
-    conn = sqlite3.connect(db)
+    from app import DATABASE_URL
+    
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT b_userID FROM endorsements_table
@@ -143,11 +142,10 @@ def getLeaderboard():
     return leaderboardDict
 
 def getConnections(userID):
-    from app import db
-
+    from app import DATABASE_URL
+    
     swipingMatches = []
-    # referrals = []
-    conn = sqlite3.connect(db)
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
     query = '''
     SELECT * FROM interactions_table WHERE a_userID = ? OR b_userID = ?
