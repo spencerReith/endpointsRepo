@@ -1,4 +1,5 @@
 import os
+import traceback
 import matplotlib as plt
 import io
 import base64
@@ -6,7 +7,7 @@ import sys
 import json
 import roman
 from datetime import date
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
 import psycopg2
 
 
@@ -43,12 +44,18 @@ app.config.update(
 )
 ###########
 DATABASE_URL = 'postgres://uenjmmbebllolo:pe3ec20e2633908367b0d8e83665f0f392cb1d17ae8d18d781a6462a3abbe37ce@c9mq4861d16jlm.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/df2upfom9smjvg'
-# app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-# Initialize the SQLAlchemy instance
-# db = SQLAlchemy()
+
 ###########
 CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for API endpoints
 ###########
+
+
+
+#################
+CONFIG2_DATABASE_URL = 'postgresql+psycopg2://uenjmmbebllolo:pe3ec20e2633908367b0d8e83665f0f392cb1d17ae8d18d781a6462a3abbe37ce@c9mq4861d16jlm.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/df2upfom9smjvg'
+engin = create_engine(CONFIG2_DATABASE_URL)
+#################
+
 
 ## home
 @app.route('/', methods=["GET"])
@@ -58,6 +65,7 @@ def home():
 @app.route('/api/verifyEmail-1', methods=['POST'])
 def verifyEmail1():
     data = request.get_json()
+    print(data)
     email = data.get('email')
     session['emailKey'] = snsLib.send_verification_email(email)
     return jsonify({"redirect": "/verifyEmail2"})
@@ -158,8 +166,11 @@ def login():
     email = data.get('email')
     password = data.get('password')
     try:
+        print('tryal')
         if authenticationLib.passwordIsAccurate(email, password):
+            print('fail0')
             userID = int(authenticationLib.pullUserID(email))
+            print('fail1')
             session['userID'] = userID
             session['email'] = email
             # print("1. heres the session:\n", session)
@@ -167,16 +178,21 @@ def login():
             ## Get deck only if one hasn't been pulled that day
             #############
             latest_update = resumeLib.fetchLatestSwipesUpdate(userID)
+            print('fail2')
             date_today = date.today()
+            print('fail3')
 
             if latest_update != date_today:
+                print('fail4a')
                 resumeLib.resetSwipes(userID, date_today)
                 newDeck = getterLib.getDeck(userID, 40)
                 session['deck'] = newDeck
             elif resumeLib.fetchSwipesRemaining(userID) <= 0:
+                print('fail4b')
                 session['deck'] = []
             else:
-                remSwipes = resumeLib.fetchSwipesRemaining()
+                print('fail4c')
+                remSwipes = resumeLib.fetchSwipesRemaining(userID)
                 newDeck = getterLib.getDeck(userID, remSwipes)
                 session['deck'] = newDeck
 
@@ -298,24 +314,27 @@ def leaderboard():
 
 ## connections
 @app.route('/api/connections', methods=["GET"])
-def connections():    
+def connections():
     userID = session['userID']
     connectionsDict = getterLib.getConnections(userID)
-
+    print('connectionsDict[refferals], post hexa logos: ', connectionsDict['referrals'])
     swipeMatchProfiles = {}
-    refs = {}
+    refs = []
     for swipeUserID in connectionsDict['swipingMatches']:
         swipeMatchProfiles[swipeUserID] = getterLib.getProfile(swipeUserID)
     for ref in connectionsDict['referrals']:
         refMatchUserID = ref['ref_connect']
         refFromUserName = endorsementLib.getNameFromUserID(ref['from_user'])
-        refs[refFromUserName] = getterLib.getProfile(refMatchUserID)
+        refs.append((refFromUserName, getterLib.getProfile(refMatchUserID)))
+
+    print("tri hexa logos, refs", refs)
     ## return full profiles of connections
     connectionProfiles = {
         'selfID':userID,
         'swipeMatches':swipeMatchProfiles,
         'refs': refs
         }
+    print('connection profiles:\n', connectionProfiles)
     
     return jsonify(connectionProfiles)
 
@@ -387,8 +406,10 @@ def endorse():
                 print('sucessful')
                 return jsonify({'result': 'sucess'}), 200
             else:
+                print("error, already matched")
                 return jsonify({'error': 'Error. these users have already matched, or you included profanity in your endorsement.'})
         except:
+            print("are sa")
             return jsonify({'error': 'Are you sure you entered the email correctly?'})
 
 @app.route('/api/refer', methods=['POST'])
@@ -410,11 +431,13 @@ def refer():
     try:
         print('trying')
         result = referralLib.attemptReferral(self_ID, email1, email2)
+        print('result as stated', result)
         if result == True:
             return jsonify({'result': 'Success! These users have been referred'})
         else:
             return jsonify({'error': 'these users have already been referred or are not compatible for a referral'})
-    except:
+    except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': 'Error: Ensure both emails are valid Dartmouth emails'})
 
 @app.route('/api/blacklist', methods=['POST'])

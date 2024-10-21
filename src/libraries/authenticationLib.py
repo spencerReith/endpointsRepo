@@ -1,10 +1,12 @@
 import psycopg2
 import sqlite3
 import hashlib
+from sqlalchemy import text
 
-# from app import db
-# db = 'main.db'
-
+# #################
+# CONFIG_DATABASE_URL = 'postgresql+psycopg2://uenjmmbebllolo:pe3ec20e2633908367b0d8e83665f0f392cb1d17ae8d18d781a6462a3abbe37ce@c9mq4861d16jlm.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/df2upfom9smjvg'
+# engine = create_engine(CONFIG_DATABASE_URL)
+# #################
 
 def createAuthorizationTable():
     from app import DATABASE_URL
@@ -23,57 +25,64 @@ def createAuthorizationTable():
     conn.close()
 
 def insert_passcode(userID, email, password):
-    from app import db
+    from app import engin
 
     hashed_key = hash_with_sha256(password)
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
-    query = '''
-    INSERT INTO authorization_table (hashedKey, email, userID) VALUES (?, ?, ?)
-    '''
-    cursor.execute(query, (hashed_key, email, userID))
-    conn.commit()
-    conn.close()
+    
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            INSERT INTO authorization_table ("hashedKey", "email", "userID")
+            VALUES (:hashedKey, :email, :userID)
+            ''')
+            connection.execute(query, {
+                'hashedKey': hashed_key,
+                'email': email,
+                'userID': userID
+            })
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
+
 
 def pullHash(email):
-    from app import DATABASE_URL
+    from app import engin
+    # Create a new connection using the engine
+    with engin.connect() as connection:
+        # Use a parameterized query to avoid SQL injection
+        query = text('SELECT "hashedKey" FROM authorization_table WHERE "email" = :email')
+        result = connection.execute(query, {'email': email})
+        hash = result.fetchone()
+        
+        # Return the hash if a result was found, otherwise return None
+        if hash:
+            return hash[0]
+        return None
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT hashedKey FROM authorization_table WHERE email = %s;
-    '''
-    hash = cursor.execute(query, (email,)).fetchone()[0]
-    conn.close()
-    return hash
 
 def emailInDB(email):
-    from app import DATABASE_URL
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT 1 FROM authorization_table WHERE email = %s;
-    '''
-    cursor.execute(query, (email,))
-    if cursor.fetchall():
-        conn.close()
-        return True
-    else:
-        conn.close()
-        return False
+    with engin.connect() as connection:
+        query = text('SELECT 1 FROM authorization_table WHERE "email" = :email')
+        result = connection.execute(query, {'email': email}).fetchall()
+        
+    return bool(result)
+
 
 def pullUserID(email):
-    from app import DATABASE_URL
-
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT userID FROM authorization_table WHERE email = %s;
-    '''
-    userID = cursor.execute(query, (email,)).fetchone()[0]
-    conn.close()
-    return userID
+    from app import engin
+    
+    with engin.connect() as connection:
+        query = text('SELECT "userID" FROM authorization_table WHERE "email" = :email')
+        result = connection.execute(query, {'email': email})
+        userID = result.fetchone()
+        
+        if userID:
+            return userID[0]
+        return None
 
 def hash_with_sha256(password):
     return hashlib.sha256(password.encode()).hexdigest()

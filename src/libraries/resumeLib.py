@@ -3,6 +3,7 @@ import psycopg2
 import os
 import sys
 import re
+from sqlalchemy import text
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -14,10 +15,8 @@ import sqlite3
 from classes.resume import Resume
 from datetime import date
 
-# from app import db
-# db = 'main.db'
 
-def createResumeTable(myDB):
+def createResumeTable():
     from app import DATABASE_URL
     
     conn = psycopg2.connect(DATABASE_URL)
@@ -41,18 +40,33 @@ def createResumeTable(myDB):
     conn.commit()
     conn.close()
 
-def addResumeToDB(myDB, res):
-    from app import DATABASE_URL
+def addResumeToDB(res):
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    INSERT INTO resume_table (userID, major, minor, height, skills, interests, referrals_remaining, endorsements_remaining, swipes_remaining, latest_swipes_update, photoID)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-    '''
-    cursor.execute(query, (res.getUserID(), res.getMajor(), res.getMinor(), res.getHeight(), res.getSkillsString(), res.getInterestsString(), res.getReferrals_Remaining(), res.getEndorsements_Remaining(), res.getSwipes_Remaining(), res.getLatest_Swipes_Update(), res.getPhotoID()))
-    conn.commit()
-    conn.close()
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            INSERT INTO resume_table ("userID", "major", "minor", "height", "skills", "interests", "referrals_remaining", "endorsements_remaining", "swipes_remaining", "latest_swipes_update", "photoID")
+            VALUES (:userID, :major, :minor, :height, :skills, :interests, :referrals_remaining, :endorsements_remaining, :swipes_remaining, :latest_swipes_update, :photoID);
+            ''')
+            connection.execute(query, {
+                'userID': res.getUserID(),
+                'major': res.getMajor(),
+                'minor': res.getMinor(),
+                'height': res.getHeight(),
+                'skills': res.getSkillsString(),
+                'interests': res.getInterestsString(),
+                'referrals_remaining': res.getReferrals_Remaining(),
+                'endorsements_remaining': res.getEndorsements_Remaining(),
+                'swipes_remaining': res.getSwipes_Remaining(),
+                'latest_swipes_update': res.getLatest_Swipes_Update(),
+                'photoID': res.getPhotoID()
+            })
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
 
 def parseName(email):
     modified_email = re.sub(r'\.(25|26|27|28)@dartmouth\.edu$', '', email)
@@ -69,114 +83,117 @@ def parseName(email):
     return fullName
 
 def parseClassYear(email):
+    print("in here")
     startOfEmail = email.strip("@dartmouth.edu")
     year = startOfEmail[-2:]
     return year
 
 def fetchLatestSwipesUpdate(userID):
-    from app import DATABASE_URL
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT latest_swipes_update
-    FROM resume_table
-    WHERE userID = %s
-    '''
-    cursor.execute(query, (userID,))
-    results = cursor.fetchall()
-    for row in results:
-        latest = row
-    latestUpdate = latest[0]
-    conn.close()
-    return latestUpdate
+    with engin.connect() as connection:
+        query = text('''
+        SELECT "latest_swipes_update"
+        FROM resume_table
+        WHERE "userID" = :userID
+        ''')
+        result = connection.execute(query, {'userID': userID}).fetchone()
+
+    if result:
+        latestUpdate = result[0]
+        return latestUpdate
+    return None
 
 def resetSwipes(userID, currentDate):
-    from app import DATABASE_URL
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    UPDATE resume_table SET swipes_remaining = 40, latest_swipes_update = %s WHERE userID = %s
-    '''
-    cursor.execute(query, (currentDate, userID))
-    conn.commit()
-    conn.close()
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            UPDATE resume_table 
+            SET "swipes_remaining" = 40, "latest_swipes_update" = :currentDate 
+            WHERE "userID" = :userID
+            ''')
+            connection.execute(query, {'currentDate': currentDate, 'userID': userID})
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
+
 
 def decrementSwipes(userID):
-    from app import DATABASE_URL
+    from app import engin
         
     curSwipes = fetchSwipesRemaining(userID)
     newSwipes = curSwipes - 1
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    UPDATE resume_table SET swipes_remaining = %s WHERE userID = %s
-    '''
-    cursor.execute(query, (newSwipes, userID))
-    conn.commit()
-    conn.close()
-
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            UPDATE resume_table 
+            SET "swipes_remaining" = :newSwipes 
+            WHERE "userID" = :userID
+            ''')
+            connection.execute(query, {'newSwipes': newSwipes, 'userID': userID})
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
 
 def fetchSwipesRemaining(userID):
-    from app import DATABASE_URL
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT swipes_remaining
-    FROM resume_table
-    WHERE userID = %s
-    '''
-    cursor.execute(query, (userID,))
-    results = cursor.fetchall()
-    for row in results:
-        remSwipes = row
-    swipesRemaining = remSwipes[0]
-    conn.close()
-    return swipesRemaining
+    with engin.connect() as connection:
+        query = text('''
+        SELECT "swipes_remaining"
+        FROM resume_table
+        WHERE "userID" = :userID
+        ''')
+        result = connection.execute(query, {'userID': userID}).fetchone()
+
+    if result:
+        swipesRemaining = result[0]
+        print('success')
+        return swipesRemaining
+    return None
 
 def fetchEndorsementsRemaining(userID):
-    from app import DATABASE_URL
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT endorsements_remaining
-    FROM resume_table
-    WHERE userID = %s
-    '''
-    cursor.execute(query, (userID,))
-    results = cursor.fetchall()
-    for row in results:
-        remEnds = row
-    endorsementsRemaining = remEnds[0]
-    conn.close()
-    return endorsementsRemaining
+    with engin.connect() as connection:
+        query = text('''
+        SELECT "endorsements_remaining"
+        FROM resume_table
+        WHERE "userID" = :userID
+        ''')
+        result = connection.execute(query, {'userID': userID}).fetchone()
+
+    if result:
+        return result[0]
+    return None
+
 
 def fetchReferralsRemaining(userID):
-    from app import DATABASE_URL
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT referrals_remaining
-    FROM resume_table
-    WHERE userID = %s
-    '''
-    cursor.execute(query, (userID,))
-    results = cursor.fetchall()
-    for row in results:
-        remRefs = row
-    referralsRemaining = remRefs[0]
-    conn.close()
-    return referralsRemaining
+    with engin.connect() as connection:
+        query = text('''
+        SELECT "referrals_remaining"
+        FROM resume_table
+        WHERE "userID" = :userID
+        ''')
+        result = connection.execute(query, {'userID': userID}).fetchone()
+
+    if result:
+        return result[0]
+    return None
 
 
                              
-def checkForSwipesUpdate(myDB, userID):
+def checkForSwipesUpdate(userID):
     currentDate = date.today()
-    latestUpdate = fetchLatestSwipesUpdate(myDB, userID)
+    latestUpdate = fetchLatestSwipesUpdate(userID)
     if currentDate > latestUpdate:
-        resetSwipes(myDB, userID, currentDate)
+        resetSwipes(userID, currentDate)

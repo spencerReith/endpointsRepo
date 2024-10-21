@@ -4,6 +4,8 @@ import sys
 import mpld3
 import numpy as np
 import psycopg2
+from sqlalchemy import text
+
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -18,21 +20,25 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import percentileofscore
 
-# db = 'main.db'
-# from app import db
 
-def getStatisticsFromDB(myDB):
-    from app import DATABASE_URL
+# #################
+# CONFIG_DATABASE_URL = 'postgresql+psycopg2://uenjmmbebllolo:pe3ec20e2633908367b0d8e83665f0f392cb1d17ae8d18d781a6462a3abbe37ce@c9mq4861d16jlm.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/df2upfom9smjvg'
+# engine = create_engine(CONFIG_DATABASE_URL)
+# #################
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM statistics;')
-    rows = cursor.fetchall()
+
+
+def getStatisticsFromDB():
+    from app import engin
+
+    with engin.connect() as connection:
+        query = text('SELECT * FROM statistics;')
+        rows = connection.execute(query).fetchall()
+    
     statistics = {}
     for row in rows:
         key = int(row[0])
         statistics[key] = [row[1], row[2], row[3]]
-    conn.close()
     return statistics
 
 
@@ -40,7 +46,7 @@ def getStatisticsFromDB(myDB):
 ### FUNCTIONS FOR GRAPH ANALYSIS #######################
 ########################################################
 
-def createStatisticsTable(myDB):
+def createStatisticsTable():
     from app import DATABASE_URL
 
     conn = psycopg2.connect(DATABASE_URL)
@@ -110,58 +116,57 @@ def calcTindarIndex(GPA, ricePurityScore):
     return tindarIndex
 
 def addTindarIndexToDB(userID, tindarIndex):
-    from app import DATABASE_URL
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    INSERT INTO statistics (userID, tindarIndex)
-    VALUES (?, ?);
-    '''
-    cursor.execute(query, (userID, tindarIndex))
-    conn.commit()
-    conn.close()
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            INSERT INTO statistics ("userID", "tindarIndex")
+            VALUES (:userID, :tindarIndex);
+            ''')
+            connection.execute(query, {'userID': userID, 'tindarIndex': tindarIndex})
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
 
-## no long needed
+
 def fetchTindarIndex(userID):
-    from app import DATABASE_URL
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT tindarIndex FROM statistics WHERE userID = ?;
-    '''
-    tindarIndex = cursor.execute(query, (userID,)).fetchone()[0]
-    conn.commit()
-    conn.close()
-    ## return tindarIndex
-    return tindarIndex
+    with engin.connect() as connection:
+        query = text('SELECT "tindarIndex" FROM statistics WHERE "userID" = :userID')
+        result = connection.execute(query, {'userID': userID}).fetchone()
+        
+    return result[0] if result else None
 
 
     
 
 ## Run calcApplicantStatistics
-def calcApplicantStatistics(myDB, G, selfID):
-    from app import DATABASE_URL
+def calcApplicantStatistics(G, selfID):
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    
     offerReceptionRate = calcOfferReceptionRate(G, selfID)
     offerBestowalRate = calcOfferBestowalRate(G, selfID)
-    ## insert data into table
-    cursor = conn.cursor()
-    query = '''
-    UPDATE statistics SET offerReceptionRate = ?, offerBestowalRate = ? WHERE userID = ?
-    '''
-    cursor.execute(query, (offerReceptionRate, offerBestowalRate, selfID))
-    conn.commit()
-    conn.close()
+    
+    with engin.connect() as connection:
+        query = text('''
+        UPDATE statistics
+        SET "offerReceptionRate" = :offerReceptionRate, "offerBestowalRate" = :offerBestowalRate
+        WHERE "userID" = :selfID
+        ''')
+        connection.execute(query, {
+            'offerReceptionRate': offerReceptionRate,
+            'offerBestowalRate': offerBestowalRate,
+            'selfID': selfID
+        })
 
-
-def calcStatistics(myDB, G):
+def calcStatistics(G):
     ID_list = list(G.nodes())
     for ID in ID_list:
-        calcApplicantStatistics(myDB, G, ID)
+        calcApplicantStatistics(G, ID)
 
 
 ##  run calcOfferReceptionRate (percentage at which an applicant recieve offers)
@@ -185,23 +190,20 @@ def writeApplicantStatistics():
     ## tindarIndex versus offerBestowalRate
     ## offerReceptionRate versus offerBestowalRate
 
-def getTindarIndexDF(myDB):
-    from app import DATABASE_URL
+def getTindarIndexDF():
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
     query = '''
-    SELECT userID, tindarIndex FROM statistics
+    SELECT "userID", "tindarIndex" FROM statistics
     '''
-    df = pd.read_sql_query(query, conn)
-    conn.close()
+    df = pd.read_sql_query(query, engin)
+    # conn.close()
     return df
 
 
 def getHistogram(userID):
-    myDB = db
     numberOfBins = 20
-    df = getTindarIndexDF(myDB)
+    df = getTindarIndexDF()
     
     # Get user score
     userScore = df.loc[df['userID'] == userID, 'tindarIndex'].values[0]

@@ -3,6 +3,7 @@
 import os
 import sys
 import psycopg2
+from sqlalchemy import text
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -22,46 +23,44 @@ from libraries import cencorshipLib
 ########################################################
 
 
-def getNodesFromDB(myDB):
-    from app import DATABASE_URL
+def getNodesFromDB():
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM applicant_pool;')
-    rows = cursor.fetchall()
+    with engin.connect() as connection:
+        query = text('SELECT * FROM applicant_pool;')
+        rows = connection.execute(query).fetchall()
+
     # store in dictionary as {userID:applicant}
     nodes = {}
     for row in rows:
         key = int(row[0])
         nodes[key] = Applicant(int(row[1]), row[3], row[5], row[6])
-    conn.close()
     return nodes
 
-def getEdgesFromDB(myDB):
-    from app import DATABASE_URL
+def getEdgesFromDB():
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM interactions_table;')
-    rows = cursor.fetchall()
+    with engin.connect() as connection:
+        query = text('SELECT * FROM interactions_table;')
+        rows = connection.execute(query).fetchall()
+
     # store fetched data
     edges = []
     for row in rows:
         edge = row ## key by weight
         edges.append(edge) ## item is a list of [node a, node b]
-    conn.close()
     return edges
 
 
-def buildSelfID_GraphFromDB(myDB, selfID):
+def buildSelfID_GraphFromDB(selfID):
     ## initialize graph G
     G = nx.DiGraph()
     ##  select all nodes (getNodesFromDB)
-    applicantDictionary = getNodesFromDB(myDB)
+    applicantDictionary = getNodesFromDB()
     for key, value in applicantDictionary.items():
         G.add_node(key, sex=value.getSex(), prefSex=value.getPrefSex())
     
-    interactionsList = getEdgesFromDB(myDB)
+    interactionsList = getEdgesFromDB()
     for interaction in interactionsList:
         ## if node a = self or node b = self, then that interaction is from or to the relevant
         if interaction[0] == selfID or interaction[1] == selfID:
@@ -70,15 +69,15 @@ def buildSelfID_GraphFromDB(myDB, selfID):
     return G ##  return whole_G
 
 
-def buildWholeGraphFromDB(myDB):
+def buildWholeGraphFromDB():
     ## build graph based on db, nodes represent applicants, edges represent interactions between them
     G = nx.DiGraph()
-    applicantDictionary = getNodesFromDB(myDB)
+    applicantDictionary = getNodesFromDB()
     ## get nodes (applicants)
     for key, value in applicantDictionary.items():
         G.add_node(key, sex=value.getSex(), prefSex=value.getPrefSex())
     ## get edges (interactions)
-    interactionsList = getEdgesFromDB(myDB)
+    interactionsList = getEdgesFromDB()
     for interaction in interactionsList:
         G.add_edge(interaction[0], interaction[1], weight=interaction[2])
 
@@ -89,12 +88,12 @@ def buildWholeGraphFromDB(myDB):
 ### FUNCTIONS FOR GRAPH/DATABASE INSERTION #############
 ########################################################
 
-def createApplicantTable(myDB):
+def createApplicantTable():
     from app import DATABASE_URL
 
     conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
-    query = '''
+    query = text('''
     CREATE TABLE IF NOT EXISTS applicant_pool (
         key INTEGER PRIMARY KEY,
         userID INTEGER,
@@ -104,59 +103,81 @@ def createApplicantTable(myDB):
         sex CHAR(1),
         prefSex CHAR(1)
     );
-    '''
+    ''')
     cursor.execute(query)
     conn.commit()
     conn.close()
 
-def createEdgeTable(myDB):
+def createEdgeTable():
     from app import DATABASE_URL
 
     conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
-    query = '''
+    query = text('''
     CREATE TABLE IF NOT EXISTS interactions_table (
         a_userID INTEGER,
         b_userID INTEGER,
         weight INTEGER,
         UNIQUE(a_userID, b_userID)
     );
-    '''
+    ''')
     cursor.execute(query)
     conn.commit()
     conn.close()
 
-def addApplicantToDB(myDB, a):
-    from app import DATABASE_URL
+def addApplicantToDB(a):
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    INSERT INTO applicant_pool (key, userID, name, email, classYear, sex, prefSex)
-    VALUES (%s, %s, %s, %s, %s, %s, %s);
-    '''
-    cursor.execute(query, (a.getUserId(), a.getUserId(), a.getName(), a.getEmail(), a.getClassYear(), a.getSex(), a.getPrefSex()))
-    conn.commit()
-    conn.close()
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            INSERT INTO applicant_pool ("key", "userID", "name", "email", "classYear", "sex", "prefSex")
+            VALUES (:key, :userID, :name, :email, :classYear, :sex, :prefSex);
+            ''')
+            connection.execute(query, {
+                'key': a.getUserId(),
+                'userID': a.getUserId(),
+                'name': a.getName(),
+                'email': a.getEmail(),
+                'classYear': a.getClassYear(),
+                'sex': a.getSex(),
+                'prefSex': a.getPrefSex()
+            })
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
+
 
 def addInteractionToDB(a_userID, b_userID, weight):
-    from app import DATABASE_URL
+    from app import engin
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    INSERT OR REPLACE INTO interactions_table (a_userID, b_userID, weight)
-    VALUES (%s, %s, %s);
-    '''
-    cursor.execute(query, (a_userID, b_userID, weight))
-    conn.commit()
-    conn.close()
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            INSERT INTO interactions_table ("a_userID", "b_userID", "weight")
+            VALUES (:a_userID, :b_userID, :weight)
+            ON CONFLICT ("a_userID", "b_userID")
+            DO UPDATE SET "weight" = EXCLUDED."weight";
+            ''')
+            connection.execute(query, {
+                'a_userID': a_userID,
+                'b_userID': b_userID,
+                'weight': weight
+            })
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
 
+        
 def addInteractionToGraph(G, a_userID, b_userID, edge_weight):
     G.add_edge(a_userID, b_userID, weight=edge_weight)
 
 
-def addInteraction(myDB, G, a_userID, b_userID, edge_weight):
+def addInteraction(G, a_userID, b_userID, edge_weight):
     addInteractionToDB(a_userID, b_userID, edge_weight)
     addInteractionToGraph(G, a_userID, b_userID, edge_weight)
 
@@ -175,6 +196,6 @@ def renegInDatabase(a_userID, b_userID):
 
 
 def blacklist(from_userID, to_userID):
-    addInteractionToDB(db, from_userID, to_userID, 9)
+    addInteractionToDB(from_userID, to_userID, 9)
     ## in case of blacklist, remove all previous endorsements the users have made of eachother
-    cencorshipLib.remove_endorsements(db, from_userID, to_userID)
+    cencorshipLib.remove_endorsements(from_userID, to_userID)

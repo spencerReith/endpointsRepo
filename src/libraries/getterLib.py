@@ -5,6 +5,7 @@ Spencer Reith – 24X
 import psycopg2
 import os
 import sys
+from sqlalchemy import text
 
 dirname = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(dirname, os.pardir))
@@ -20,31 +21,31 @@ from libraries import endorsementLib
 import pandas as pd
 
 
-# from app import db
-# db = 'main.db'
-
 def getDeck(userID, cap):
-    from app import db
+    print('Inside getDeck')
+    print("userid: {userID}, {cap}}", userID, cap)
+    selfID_Graph = algLib.buildSelfID_GraphFromDB(userID)
 
-    selfID_Graph = algLib.buildSelfID_GraphFromDB(db, userID)
-    ## get queue of userID's to swipe through
     userID_Queue = algorithm.getCompositeQueue(selfID_Graph, userID, cap)
     deck = {}
-    ## place userID & corresponding information in a double-layered dictionary
+    print('pre iteration')
+    print('userID_queue', userID_Queue)
     for userID in userID_Queue:
         deck[userID] = getProfile(userID)
 
+    print('returning deck')
     return deck
 
 def getProfile(userID):
-    # print("\n\nUserID:", userID)
+    print("prior0")
     res_df = getResumeDF(userID)
     applicant_df = getApplicantDF(userID)
     stats_df = getStatisticsDF(userID)
 
-    print(res_df)
-    # print("\n\ApplicantDF:\n", applicant_df)
-
+    print('\nApplicant Dict Head\n')
+    print(applicant_df.head())
+    print("prior")
+    print(applicant_df)
     name = applicant_df['name'][0]
     email = applicant_df['email'][0]
     classYear = "20" + str(applicant_df['classYear'][0])
@@ -56,6 +57,7 @@ def getProfile(userID):
     interests = res_df['interests'].to_list()
     tindarIndex = stats_df['tindarIndex'].to_list()
     endorsements = endorsementLib.fetchEndorsements(userID)
+    print("post")
 
     profile = {
         'userID' : userID,
@@ -76,48 +78,51 @@ def getProfile(userID):
 
 
 def getResumeDF(userID):
-    from app import DATABASE_URL
-    
-    conn = psycopg2.connect(DATABASE_URL)
-    query = "SELECT * FROM resume_table WHERE userID = ?"
-    df = pd.read_sql_query(query, conn, params=(userID,))
-    conn.close()
+    from app import engin
+
+    query = text('''
+    SELECT * FROM resume_table WHERE "userID" = :userID
+    ''')
+    df = pd.read_sql_query(query, engin, params={"userID": userID})
+    print('got resume df')
     return df
 
 def getApplicantDF(userID):
-    from app import DATABASE_URL
-    
-    conn = psycopg2.connect(DATABASE_URL)
-    query = "SELECT * FROM applicant_pool WHERE userID = ?"
-    df = pd.read_sql_query(query, conn, params=(userID,))
-    conn.close()
+    from app import engin
+    print('attempting appdf get')
+    # conn = psycopg2.connect(DATABASE_URL)
+    query = text('''
+    SELECT * FROM applicant_pool WHERE "userID" = :userID
+    ''')
+    df = pd.read_sql_query(query, engin, params={"userID" : userID})
+    # conn.close()
+    print('suces appdf get')
     return df
 
 def getStatisticsDF(userID):
-    from app import DATABASE_URL
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    query = "SELECT * FROM statistics WHERE userID = ?"
-    df = pd.read_sql_query(query, conn, params=(userID,))
-    conn.close()
+    query = text('''
+    SELECT * FROM statistics WHERE "userID" = :userID
+    ''')
+    df = pd.read_sql_query(query, engin, params={"userID" : userID})
     return df
 
 
 def getEndRefs(userID):
-    from app import DATABASE_URL
-    
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT endorsements_remaining, referrals_remaining
-    FROM resume_table
-    WHERE userID = ?
-    '''
-    cursor.execute(query, (userID,))
-    results = cursor.fetchall()
+    from app import engin
+
+    with engin.connect() as connection:
+        query = text('''
+        SELECT "endorsements_remaining", "referrals_remaining"
+        FROM resume_table
+        WHERE "userID" = :userID
+        ''')
+        results = connection.execute(query, {'userID': userID}).fetchall()
+
     for row in results:
         remEndorsements, remReferrals = row
-    conn.close()
+
     endRefs = {
         'remainingEndorsements' : remEndorsements,
         'remainingReferrals' : remReferrals
@@ -126,15 +131,13 @@ def getEndRefs(userID):
     return endRefs
 
 def getLeaderboard():
-    from app import DATABASE_URL
+    from app import engin
     
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT b_userID FROM endorsements_table
-    '''
-    df = pd.read_sql_query(query, conn)
-    conn.close()
+    query = text('''
+    SELECT "b_userID" FROM endorsements_table
+    ''')
+    df = pd.read_sql_query(query, engin)
+
     ## find and return the 5 most highly endorsed applicants
     sorted_df = df['b_userID'].value_counts()
     top5_df = sorted_df.head(5)
@@ -142,16 +145,14 @@ def getLeaderboard():
     return leaderboardDict
 
 def getConnections(userID):
-    from app import DATABASE_URL
-    
+    from app import engin
+    print("we here")
     swipingMatches = []
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT * FROM interactions_table WHERE a_userID = ? OR b_userID = ?
-    '''
-    df = pd.read_sql_query(query, conn, params=(userID, userID))
-    conn.close()
+    query = text('''
+    SELECT * FROM interactions_table WHERE "a_userID" = :userID OR "b_userID" = :userID
+    ''')
+    df = pd.read_sql_query(query, engin, params={"userID" : userID})
+
     ## filter by swiping connections, and refferals
     swiping_df = df[(df['weight'] == 1)]
     referrals_df = df[(df['weight'] == 14)]
@@ -163,7 +164,7 @@ def getConnections(userID):
     raw_blacklist_dict = blacklist_df.to_dict(orient='list')
     blacklist_a_Users = raw_blacklist_dict['a_userID']
     blacklist_b_Users = raw_blacklist_dict['b_userID']
-    # print("Raw_blacklist_dict: ", raw_blacklist_dict, blacklist_a_Users, blacklist_b_Users)
+
     seenDict = {}
 
     ## iterate through swiping interactions
@@ -185,10 +186,10 @@ def getConnections(userID):
                 seenDict[b_userID] = 1
     
     
-    referrals = referralLib.getReferralInfo(db, userID)
+    referrals = referralLib.getReferralInfo(userID)
     refsList = []
     for ref in referrals:
-        # print("ref: ", ref)
+        print("ref: ", ref)
         if ref[1] == userID:
             if ref[2] in blacklist_a_Users or ref[2] in blacklist_b_Users:
                 continue
@@ -198,25 +199,15 @@ def getConnections(userID):
                 continue
             refsList.append({'from_user' : ref[0], 'ref_connect' : ref[1]})
 
-    # print("referals", refsList)
-
-    
-                    # ## if a_userID is not one's self, it's the person he or she was referred to
-                    # for i in range(len(raw_referrals_dict['a_userID'])):
-                    #     a_userID = raw_referrals_dict['a_userID'][i]
-                    #     if a_userID != userID:
-                    #         referrals.append(a_userID)
-
     connections = {
         'userID' : userID,
         'swipingMatches' : swipingMatches,
         'referrals' : refsList
     }
+    # print('per hostas logos, connections: ', connections)
     
-    # print("\nsending connections. Refs list:\n\n", refsList)
     return connections
 
-##getEndorsements
 
 def overCharLimit(type, message):
     mLength = 0

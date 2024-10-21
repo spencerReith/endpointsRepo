@@ -11,12 +11,18 @@ import libraries.resumeLib as resumeLib
 
 class Applicant:
     def __init__(self, userID, email, sex, prefSex):
+        print('atempting init')
         self.userID = userID
+        print('fail00')
         self.name = resumeLib.parseName(email)
+        print('fail01')
         self.email = email
+        print('fail02')
         self.classYear = resumeLib.parseClassYear(email)
+        print('fail03')
         self.sex = sex
         self.prefSex = prefSex
+        print('fail, on exit')
     
     def getUserId(self):
         return self.userID

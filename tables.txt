@@ -1,67 +1,67 @@
 CREATE TABLE IF NOT EXISTS applicant_pool (
-        key INTEGER PRIMARY KEY,
-        userID INTEGER,
-        name TEXT,
-        email TEXT,
-        classYear INTEGER,
-        sex CHAR(1),
-        prefSex CHAR(1)
+        "key" INTEGER PRIMARY KEY,
+        "userID" INTEGER,
+        "name" TEXT,
+        "email" TEXT,
+        "classYear" INTEGER,
+        "sex" CHAR(1),
+        "prefSex" CHAR(1)
     );
 
 
 CREATE TABLE IF NOT EXISTS interactions_table (
-        a_userID INTEGER,
-        b_userID INTEGER,
-        weight INTEGER,
-        UNIQUE(a_userID, b_userID)
+        "a_userID" INTEGER,
+        "b_userID" INTEGER,
+        "weight" INTEGER,
+        UNIQUE("a_userID", "b_userID")
     );
 
 CREATE TABLE IF NOT EXISTS statistics (
-        userID INTEGER PRIMARY KEY,
-        offerReceptionRate FLOAT,
-        offerBestowalRate FLOAT,
-        tindarIndex FLOAT
+        "userID" INTEGER PRIMARY KEY,
+        "offerReceptionRate" FLOAT,
+        "offerBestowalRate" FLOAT,
+        "tindarIndex" FLOAT
     );
 
 CREATE TABLE IF NOT EXISTS authorization_table (
-        userID INTEGER PRIMARY KEY,
-        email TEXT,
-        hashedKey TEXT
+        "userID" INTEGER PRIMARY KEY,
+        "email" TEXT,
+        "hashedKey" TEXT
     );
 
 CREATE TABLE IF NOT EXISTS endorsements_table (
-        a_userID INTEGER,
-        b_userID INTEGER,
-        message TEXT
+        "a_userID" INTEGER,
+        "b_userID" INTEGER,
+        "message" TEXT
     );
 
 CREATE TABLE IF NOT EXISTS messages_table (
-        a_userID INTEGER,
-        b_userID INTEGER,
-        messageString TEXT,
-        UNIQUE(a_userID, b_userID),
-        CHECK (a_userID < b_userID)
+        "a_userID" INTEGER,
+        "b_userID" INTEGER,
+        "messageString" TEXT,
+        UNIQUE("a_userID", "b_userID"),
+        CHECK ("a_userID" < "b_userID")
     );
 
 CREATE TABLE IF NOT EXISTS referrals_table (
-        self_ID INTEGER,
-        a_userID INTEGER,
-        b_userID INTEGER,
-        UNIQUE(a_userID, b_userID)
+        "self_ID" INTEGER,
+        "a_userID" INTEGER,
+        "b_userID" INTEGER,
+        UNIQUE("a_userID", "b_userID")
     );
 
 CREATE TABLE IF NOT EXISTS resume_table (
-        userID INTEGER PRIMARY KEY,
-        major TEXT,
-        minor TEXT,
-        height TEXT,
-        skills TEXT,
-        interests TEXT,
-        referrals_remaining INT,
-        endorsements_remaining INT,
-        swipes_remaining INT,
-        latest_swipes_update DATE,
-        photoID TEXT
+        "userID" INTEGER PRIMARY KEY,
+        "major" TEXT,
+        "minor" TEXT,
+        "height" TEXT,
+        "skills" TEXT,
+        "interests" TEXT,
+        "referrals_remaining" INT,
+        "endorsements_remaining" INT,
+        "swipes_remaining" INT,
+        "latest_swipes_update" DATE,
+        "photoID" TEXT
     );
 
 ---------------------------

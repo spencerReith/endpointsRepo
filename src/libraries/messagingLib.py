@@ -1,6 +1,7 @@
 import psycopg2
 import sqlite3
 import src.libraries.authenticationLib as authenticationLib
+from sqlalchemy import text
 
 # from app import db
 # db = 'main.db'
@@ -36,7 +37,7 @@ def parseMessage(messageString):
     return mTupleList
 
 def retrieveRawMessageString(user1_ID, user2_ID):
-    from app import DATABASE_URL
+    from app import engin
     
     ## ensure lower userID will be marked as 'a_userID' in DB
     if user1_ID < user2_ID:
@@ -46,19 +47,15 @@ def retrieveRawMessageString(user1_ID, user2_ID):
         userA_ID = user2_ID
         userB_ID = user1_ID
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    query = '''
-    SELECT messageString FROM messages_table WHERE a_userID = %s AND b_userID = %s
-    '''
-    result = cursor.execute(query, (userA_ID, userB_ID)).fetchone()
-    conn.commit()
-    conn.close()
-    if result:
-        rawMessageString = result[0]
-    else:
-        rawMessageString = None
-    return rawMessageString
+    with engin.connect() as connection:
+        query = text('''
+        SELECT "messageString" 
+        FROM messages_table 
+        WHERE "a_userID" = :userA_ID AND "b_userID" = :userB_ID
+        ''')
+        result = connection.execute(query, {'userA_ID': userA_ID, 'userB_ID': userB_ID}).fetchone()
+
+    return result[0] if result else None
 
 def retrieveMessages(self_userID, other_userID):
     rawMessageString = retrieveRawMessageString(self_userID, other_userID)
@@ -68,10 +65,38 @@ def retrieveMessages(self_userID, other_userID):
         mTupleList = parseMessage(rawMessageString)
         return mTupleList
 
-def concatonateMessage(user1_ID, user2_ID, concatString):
-    from app import DATABASE_URL
+# def concatonateMessage(user1_ID, user2_ID, concatString):
+#     from app import engin
     
-    ## ensure lower userID will be marked as 'a_userID' in DB
+#     ## ensure lower userID will be marked as 'a_userID' in DB
+#     if user1_ID < user2_ID:
+#         userA_ID = user1_ID
+#         userB_ID = user2_ID
+#     else:
+#         userA_ID = user2_ID
+#         userB_ID = user1_ID
+
+#     conn = psycopg2.connect(DATABASE_URL)
+#     cursor = conn.cursor()
+#     ## either concatonate onto message string, or add a new row to the table for the new conversation
+#     query = '''
+#     UPDATE messages_table
+#     SET "messageString" = "messageString" || %s
+#     WHERE "a_userID" = %s AND "b_userID" = %s
+#     '''
+#     cursor.execute(query, (concatString, userA_ID, userB_ID))
+#     if cursor.rowcount == 0:
+#         insert_query = '''
+#         INSERT INTO messages_table ("a_userID", "b_userID", "messageString") 
+#         VALUES (%s, %s, %s);
+#         '''
+#         cursor.execute(insert_query, (userA_ID, userB_ID, concatString))
+#     conn.commit()
+#     conn.close()
+
+def concatonateMessage(user1_ID, user2_ID, concatString):
+    from app import engin
+
     if user1_ID < user2_ID:
         userA_ID = user1_ID
         userB_ID = user2_ID
@@ -79,23 +104,35 @@ def concatonateMessage(user1_ID, user2_ID, concatString):
         userA_ID = user2_ID
         userB_ID = user1_ID
 
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    ## either concatonate onto message string, or add a new row to the table for the new conversation
-    query = '''
-    UPDATE messages_table
-    SET messageString = messageString || ?
-    WHERE a_userID = ? AND b_userID = ?
-    '''
-    cursor.execute(query, (concatString, userA_ID, userB_ID))
-    if cursor.rowcount == 0:
-        insert_query = '''
-        INSERT INTO messages_table (a_userID, b_userID, messageString) 
-        VALUES (?, ?, ?);
-        '''
-        cursor.execute(insert_query, (userA_ID, userB_ID, concatString))
-    conn.commit()
-    conn.close()
+    with engin.connect() as connection:
+        transaction = connection.begin()
+        try:
+            query = text('''
+            UPDATE messages_table
+            SET "messageString" = "messageString" || :concatString
+            WHERE "a_userID" = :userA_ID AND "b_userID" = :userB_ID
+            ''')
+            result = connection.execute(query, {
+                'concatString': concatString,
+                'userA_ID': userA_ID,
+                'userB_ID': userB_ID
+            })
+            
+            if result.rowcount == 0:
+                insert_query = text('''
+                INSERT INTO messages_table ("a_userID", "b_userID", "messageString") 
+                VALUES (:userA_ID, :userB_ID, :concatString)
+                ''')
+                connection.execute(insert_query, {
+                    'userA_ID': userA_ID,
+                    'userB_ID': userB_ID,
+                    'concatString': concatString
+                })
+            
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
 
 
 def sendMessage(fromUserID, toUserID, message):
