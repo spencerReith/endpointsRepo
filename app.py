@@ -219,6 +219,10 @@ def login():
 ## other user's profile
 @app.route('/api/othprf', methods=["POST"])
 def other_profile():
+    ####################
+    if 'userID' not in session:
+        return jsonify({"error" : ""}), 404
+    ####################
     data = request.get_json()
     userID = data.get('userID')
 
@@ -245,6 +249,10 @@ def other_profile():
 ## personal profile
 @app.route('/api/userProfile', methods=["GET"])
 def profile():
+    ###################
+    if 'userID' not in session:
+        return jsonify({"error" : ""}), 404
+    ###################
     # print("\n\n\nHere is session:", session)
     # print("inside of profile")
     userID = session['userID']            
@@ -276,6 +284,10 @@ def profile():
 ## recruiting
 @app.route('/api/recruiting', methods=['GET', 'POST'])
 def recruiting():
+    ####################
+    if 'userID' not in session:
+        return jsonify({"error" : ""}), 404
+    ####################
     print('current session', session)
     if request.method == 'POST':
         data = request.get_json()
@@ -340,6 +352,10 @@ def connections():
 
 @app.route('/api/messaging', methods=['POST'])
 def messaging():
+    ###################
+    if 'userID' not in session:
+        return jsonify({"error" : ""}), 404
+    ###################
     data = request.get_json()
 
     self_userID = data.get('selfUserID')
